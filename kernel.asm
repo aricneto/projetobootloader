@@ -16,7 +16,7 @@ HORIZONTAL equ 1
     mov bh, 0      ; [pagina] - 0
     mov cx, %1     ; [coluna] - MP -> posiçao x da linha
     mov dx, %2     ; [linha]  - MP -> posicao y da linha
-    mov byte [size], %3 	 ; tamanho da linha
+    mov word [size], %3 	 ; tamanho da linha
     mov byte [direction], %4 ; direcao da linha (VERTICAL ou HORIZONTAL)
     mov ah, 0ch
     int 10h
@@ -40,12 +40,12 @@ draw_linha:
 
     ; size representa o numero total
     ; de pixels a ser printado
-    dec byte [size]	
-    cmp byte [size], 0
+    dec word [size]	
+    cmp word [size], 0
     jge draw_linha
     ret
 
-size 	  db 0
+size 	  dw 0
 direction db 0
 
 refresh_video:
@@ -66,14 +66,25 @@ start:
     mov ah, 00h 
     int 10h
     
-    print_linha 30, 30, 50, HORIZONTAL, 0x0c
-    print_linha 55, 5, 50, VERTICAL, 0x0d
+    ; TODO: TRANSFORMAR TUDO ISSO AQUI EM UM LOOP!!!!
+    print_linha 89,  0, 200, VERTICAL, 0x0e
+    print_linha 90,  0, 200, VERTICAL, 0x0e
+    print_linha 216, 0, 200, VERTICAL, 0x0e
+    print_linha 217, 0, 200, VERTICAL, 0x0e
+    print_linha 218, 0, 200, VERTICAL, 0x0e
+
+    print_linha 111, 0, 200, VERTICAL, 0x05
+    print_linha 133, 0, 200, VERTICAL, 0x05
+    print_linha 154, 0, 200, VERTICAL, 0x05
+    print_linha 175, 0, 200, VERTICAL, 0x05
+    print_linha 196, 0, 200, VERTICAL, 0x05
+
+    print_linha 91, 170, 123, HORIZONTAL, 0x02
+    print_linha 91, 180, 123, HORIZONTAL, 0x02
+    ; TODO: TRANSFORMAR /\ EM UM LOOP!!!!!!!
 
 
     jmp halt
 
 halt:
     jmp $
-
-times 510 - ($ - $$) db 0
-dw 0xaa55
