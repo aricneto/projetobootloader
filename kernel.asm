@@ -1,6 +1,7 @@
 org 0x7e00
 jmp 0x0000:start
 
+; constantes usadas por print_linha
 VERTICAL equ 0
 HORIZONTAL equ 1
 
@@ -23,6 +24,7 @@ HORIZONTAL equ 1
 %endmacro
 
 draw_linha:
+    ; checar direçao a ser desenhada
     cmp byte [direction], VERTICAL
     je .vertical
     jmp .horizontal
@@ -32,9 +34,12 @@ draw_linha:
     .horizontal:
         inc cx
     
+    ; desenhar
     .draw:
     int 10h
 
+    ; size representa o numero total
+    ; de pixels a ser printado
     dec byte [size]	
     cmp byte [size], 0
     jge draw_linha
