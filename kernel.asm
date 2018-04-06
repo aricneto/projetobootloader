@@ -5,7 +5,9 @@ jmp 0x0000:start
 VERTICAL equ 0
 HORIZONTAL equ 1
 
-%define addy(x,y) x + y
+%define sum(x,y) x + y
+%define subt(x,y) x - y
+%define mult(x,y) x * y
 
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
@@ -50,19 +52,21 @@ draw_linha:
 size 	  dw 0
 direction db 0
 
-; (x, y, length, width)
+; (x, y, width, length, color)
 ; imprime uma barra vertical começando em «start»
 ; e indo até («start» + «width», start + «length») 
-%macro print_barras 4
+; com cor «color»
+%macro print_retangulo 5
     mov word [x_coord], %1
     mov word [y_coord], %2
-    mov word [xs], %3
-    mov word [width], %4
+    mov word [width], %3
+    mov si, %4
+    mov byte [color], %5
     call draw_barras
 %endmacro
 
 draw_barras:
-    print_linha word [x_coord], word [y_coord], xs, VERTICAL, 0x0e
+    print_linha word [x_coord], word [y_coord], si, VERTICAL, byte [color]
     inc word [x_coord]
     dec word [width]
     cmp word [width], 0
@@ -72,7 +76,12 @@ draw_barras:
 x_coord dw 0
 y_coord dw 0
 width dw 0
-xs dw 0
+color db 0
+
+%macro print_retangulo_oco 6
+    print_retangulo %1, %2, %3, %4, %5
+    print_retangulo sum(%1, %6), sum(%2, %6), subt(%3, mult(%6, 2)), subt(%4, mult(%6, 2)), 0x00
+%endmacro
 
 refresh_video:
     ; [int 10h 00h] - modo de video
@@ -92,22 +101,18 @@ start:
     mov ah, 00h 
     int 10h
     
+    print_retangulo_oco 91, 170, 125, 10, 0x0b, 1
 
-    print_barras 89, 100, 50, 100
-    ;print_linha 89, 10, 20, VERTICAL, 0x0e
-    ;print_barras 210, 2
+    print_retangulo 89, 0, 3, 200, 0x0e
+    print_retangulo 214, 0, 3, 200, 0x0e
 
-    ;mov byte [num_barras], 5
-    ;.print_tabs:
-    ;    print_linha word [tab_start], 0, 200, VERTICAL, 0x05
-    ;    add byte [tab_start], 21
-    ;    dec byte [num_barras]
-    ;    cmp byte [num_barras], 0
-    ;    jg .print_tabs
-;
-    ;print_linha 91, 170, 123, HORIZONTAL, 0x02
-    ;print_linha 91, 180, 123, HORIZONTAL, 0x02
-    ; TODO: TRANSFORMAR /\ EM UM LOOP!!!!!!!
+    mov byte [num_barras], 5
+    .print_tabs:
+        print_linha word [tab_start], 0, 200, VERTICAL, 0x0c
+        add byte [tab_start], 21
+        dec byte [num_barras]
+        cmp byte [num_barras], 0
+        jg .print_tabs
 
 
     jmp halt
