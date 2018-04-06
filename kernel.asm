@@ -53,9 +53,9 @@ size 	  dw 0
 direction db 0
 
 ; (x, y, width, length, color)
-; imprime uma barra vertical começando em «start»
-; e indo até («start» + «width», start + «length») 
-; com cor «color»
+; desenha um retângulo em («x», «y»)
+; de tamanho «width», «length»
+; de cor «color»
 %macro print_retangulo 5
     mov word [x_coord], %1
     mov word [y_coord], %2
@@ -78,6 +78,11 @@ y_coord dw 0
 width dw 0
 color db 0
 
+; (x, y, width, length, color, thickness)
+; desenha um retângulo oco em («x», «y»)
+; de tamanho «width», «length»
+; de cor «color»
+; e grossura «thickness»
 %macro print_retangulo_oco 6
     print_retangulo %1, %2, %3, %4, %5
     print_retangulo sum(%1, %6), sum(%2, %6), subt(%3, mult(%6, 2)), subt(%4, mult(%6, 2)), 0x00
