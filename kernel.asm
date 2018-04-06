@@ -5,6 +5,8 @@ jmp 0x0000:start
 VERTICAL equ 0
 HORIZONTAL equ 1
 
+%define addy(x,y) x + y
+
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
 ; de tamanho «tamanho»
@@ -48,6 +50,30 @@ draw_linha:
 size 	  dw 0
 direction db 0
 
+; (x, y, length, width)
+; imprime uma barra vertical começando em «start»
+; e indo até («start» + «width», start + «length») 
+%macro print_barras 4
+    mov word [x_coord], %1
+    mov word [y_coord], %2
+    mov word [xs], %3
+    mov word [width], %4
+    call draw_barras
+%endmacro
+
+draw_barras:
+    print_linha word [x_coord], word [y_coord], xs, VERTICAL, 0x0e
+    inc word [x_coord]
+    dec word [width]
+    cmp word [width], 0
+    jg draw_barras
+    ret
+
+x_coord dw 0
+y_coord dw 0
+width dw 0
+xs dw 0
+
 refresh_video:
     ; [int 10h 00h] - modo de video
     mov al, 13h ; [modo de video VGA]
@@ -66,25 +92,29 @@ start:
     mov ah, 00h 
     int 10h
     
-    ; TODO: TRANSFORMAR TUDO ISSO AQUI EM UM LOOP!!!!
-    print_linha 89,  0, 200, VERTICAL, 0x0e
-    print_linha 90,  0, 200, VERTICAL, 0x0e
-    print_linha 216, 0, 200, VERTICAL, 0x0e
-    print_linha 217, 0, 200, VERTICAL, 0x0e
-    print_linha 218, 0, 200, VERTICAL, 0x0e
 
-    print_linha 111, 0, 200, VERTICAL, 0x05
-    print_linha 133, 0, 200, VERTICAL, 0x05
-    print_linha 154, 0, 200, VERTICAL, 0x05
-    print_linha 175, 0, 200, VERTICAL, 0x05
-    print_linha 196, 0, 200, VERTICAL, 0x05
+    print_barras 89, 100, 50, 100
+    ;print_linha 89, 10, 20, VERTICAL, 0x0e
+    ;print_barras 210, 2
 
-    print_linha 91, 170, 123, HORIZONTAL, 0x02
-    print_linha 91, 180, 123, HORIZONTAL, 0x02
+    ;mov byte [num_barras], 5
+    ;.print_tabs:
+    ;    print_linha word [tab_start], 0, 200, VERTICAL, 0x05
+    ;    add byte [tab_start], 21
+    ;    dec byte [num_barras]
+    ;    cmp byte [num_barras], 0
+    ;    jg .print_tabs
+;
+    ;print_linha 91, 170, 123, HORIZONTAL, 0x02
+    ;print_linha 91, 180, 123, HORIZONTAL, 0x02
     ; TODO: TRANSFORMAR /\ EM UM LOOP!!!!!!!
 
 
     jmp halt
+
+num_barras db 2
+barra_start dw 0
+tab_start dw 111
 
 halt:
     jmp $
