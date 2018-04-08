@@ -27,6 +27,31 @@ HORIZONTAL equ 1
     call draw_linha
 %endmacro
 
+; (x, y, width, length, color)
+; desenha um retângulo em («x», «y»)
+; de tamanho «width», «length»
+; de cor «color»
+%macro print_retangulo 5
+    mov word [x_coord], %1
+    mov word [y_coord], %2
+    mov word [width], %3
+    mov si, %4
+    mov byte [color], %5
+    call draw_barras
+%endmacro
+
+; (x, y, width, length, color, thickness)
+; desenha um retângulo oco em («x», «y»)
+; de tamanho «width», «length»
+; de cor «color»
+; e grossura «thickness»
+%macro print_retangulo_oco 6
+    print_retangulo %1, %2, %3, %6, %5 ; x, y, width, thickness, color
+    print_retangulo %1, sum(%2, %4), %3, %6, %5 ; x, length, width, thickness, color
+    print_retangulo %1, %2, %6, %4, %5 ; x, y, thickness, length, color
+    print_retangulo sum(%1, %3), %2, %6, sum(%4, 1), %5 ; width, y, thickness, length, color
+%endmacro
+
 draw_linha:    
     ; desenhar
     int 10h
@@ -49,19 +74,6 @@ draw_linha:
     jg draw_linha
     ret
 
-; (x, y, width, length, color)
-; desenha um retângulo em («x», «y»)
-; de tamanho «width», «length»
-; de cor «color»
-%macro print_retangulo 5
-    mov word [x_coord], %1
-    mov word [y_coord], %2
-    mov word [width], %3
-    mov si, %4
-    mov byte [color], %5
-    call draw_barras
-%endmacro
-
 draw_barras:
     print_linha word [x_coord], word [y_coord], si, VERTICAL, byte [color]
     inc word [x_coord]
@@ -77,18 +89,6 @@ color db 0
 size 	  dw 0
 direction db 0
 
-; (x, y, width, length, color, thickness)
-; desenha um retângulo oco em («x», «y»)
-; de tamanho «width», «length»
-; de cor «color»
-; e grossura «thickness»
-%macro print_retangulo_oco 6
-    print_retangulo %1, %2, %3, %6, %5 ; x, y, width, thickness, color
-    print_retangulo %1, sum(%2, %4), %3, %6, %5 ; x, length, width, thickness, color
-    print_retangulo %1, %2, %6, %4, %5 ; x, y, thickness, length, color
-    print_retangulo sum(%1, %3), %2, %6, sum(%4, 1), %5 ; width, y, thickness, length, color
-%endmacro
-
 refresh_video:
     ; [int 10h 00h] - modo de video
     mov al, 13h ; [modo de video VGA]
@@ -96,17 +96,7 @@ refresh_video:
     int 10h
     ret
 
-start:
-    ; setup
-    xor ax, ax    ; ax <- 0
-    mov ds, ax    ; ds <- 0
-    mov es, ax    ; es <- 0
-
-    ; [int 10h 00h] - modo de video
-    mov al, 13h ; [modo de video VGA]
-    mov ah, 00h 
-    int 10h
-    
+draw_arena:
     print_retangulo_oco 91, 170, 125, 10, 0x0b, 1
 
     print_retangulo 89, 0, 3, 200, 0x0e
@@ -119,7 +109,29 @@ start:
         dec byte [num_barras]
         cmp byte [num_barras], 0
         jg .print_tabs
+    ret
 
+start:
+    ; setup
+    xor ax, ax    ; ax <- 0
+    mov ds, ax    ; ds <- 0
+    mov es, ax    ; es <- 0
+
+    ; [int 10h 00h] - modo de video
+    mov al, 12h ; [modo de video VGA 640x480 16 color graphics]
+    mov ah, 00h 
+    int 10h
+
+    mov ah, 0xb
+	mov bh, 0
+	mov bl, 08h
+	int 10h
+
+    print_retangulo 30, 30, 80, 110, 0x0f
+    print_retangulo 40, 35, 4, 12, 0x00
+    print_retangulo 35, 50, 15, 15, 0x0c
+
+    ;call draw_arena
 
     jmp halt
 
