@@ -6,7 +6,6 @@ Tipo um Guitar Hero só que em Assembly.
 - `boot2.asm` inicia em `0x500` e carrega o setor de memória do kernel mas antes disso apresenta algumas mensagens para alertar o usuario do que está acontecendo
 - `kernel.asm` inicia em `0x7e00` e é onde o programa principal está armazenado
 - Para compilar, veja o makefile
-- Todos tem 512 bytes de memória disponível
 
 # Style
 - Identação: `4 espaços`

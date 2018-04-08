@@ -6,7 +6,7 @@ VERTICAL equ 0
 HORIZONTAL equ 1
 
 %define sum(x,y) x + y
-%define subt(x,y) x - y
+%define diff(x,y) x - y
 %define mult(x,y) x * y
 
 ; (x, y, tamanho, direcao, cor)
@@ -27,30 +27,27 @@ HORIZONTAL equ 1
     call draw_linha
 %endmacro
 
-draw_linha:
+draw_linha:    
+    ; desenhar
+    int 10h
+
     ; checar direçao a ser desenhada
     cmp byte [direction], VERTICAL
     je .vertical
     jmp .horizontal
     .vertical:
         inc dx
-        jmp .draw
+        jmp .continue
     .horizontal:
         inc cx
-    
-    ; desenhar
-    .draw:
-    int 10h
 
+    .continue:
     ; size representa o numero total
     ; de pixels a ser printado
     dec word [size]	
     cmp word [size], 0
-    jge draw_linha
+    jg draw_linha
     ret
-
-size 	  dw 0
-direction db 0
 
 ; (x, y, width, length, color)
 ; desenha um retângulo em («x», «y»)
@@ -77,6 +74,8 @@ x_coord dw 0
 y_coord dw 0
 width dw 0
 color db 0
+size 	  dw 0
+direction db 0
 
 ; (x, y, width, length, color, thickness)
 ; desenha um retângulo oco em («x», «y»)
@@ -84,8 +83,10 @@ color db 0
 ; de cor «color»
 ; e grossura «thickness»
 %macro print_retangulo_oco 6
-    print_retangulo %1, %2, %3, %4, %5
-    print_retangulo sum(%1, %6), sum(%2, %6), subt(%3, mult(%6, 2)), subt(%4, mult(%6, 2)), 0x00
+    print_retangulo %1, %2, %3, %6, %5 ; x, y, width, thickness, color
+    print_retangulo %1, sum(%2, %4), %3, %6, %5 ; x, length, width, thickness, color
+    print_retangulo %1, %2, %6, %4, %5 ; x, y, thickness, length, color
+    print_retangulo sum(%1, %3), %2, %6, sum(%4, 1), %5 ; width, y, thickness, length, color
 %endmacro
 
 refresh_video:
