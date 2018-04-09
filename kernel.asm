@@ -1,14 +1,21 @@
 org 0x7e00
 jmp 0x0000:start
 
-; constantes usadas por print_linha
-VERTICAL equ 0
-HORIZONTAL equ 1
-
 %define sum(x,y) x + y
 %define diff(x,y) x - y
 %define mult(x,y) x * y
 %define divd(x,y) x / y
+
+; constantes
+VERTICAL equ 0
+HORIZONTAL equ 1
+CARD_SIZE_X equ 72
+CARD_SIZE_Y equ 102
+HALF_CARD_SIZE_X equ divd(CARD_SIZE_X, 2)
+HALF_CARD_SIZE_Y equ divd(CARD_SIZE_Y, 2)
+
+%define gridx(x) sum(20, sum(mult(20, x), mult(CARD_SIZE_X, x)))
+%define gridy(y) sum(20, sum(mult(20, y), mult(CARD_SIZE_Y, y)))
 
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
@@ -84,17 +91,58 @@ HORIZONTAL equ 1
 
 ; (x, y, border_color)
 %macro draw_card 3
-    rect %1, %2, 72, 102, 0x0f
-    rect_oco diff(%1, 2), diff(%2, 2), 76, 106, %3, 2
-    rect_oco diff(%1, 3), diff(%2, 3), 78, 108, 0x0c, 1
+    rect %1, %2, CARD_SIZE_X, CARD_SIZE_Y, 0x0f
+    rect_oco diff(%1, 2), diff(%2, 2), sum(CARD_SIZE_X, 4), sum(CARD_SIZE_Y, 4), %3, 2
+    rect_oco diff(%1, 3), diff(%2, 3), sum(CARD_SIZE_X, 6), sum(CARD_SIZE_Y, 6), 0x0c, 1
 %endmacro
 
 ; (x, y, color)
 ; card start x, y
 %macro draw_glib 3
+    draw_card %1, %2, %3
     rect sum(%1, 16), sum(%2, 28), 9, 50, %3
     rect sum(%1, 16), sum(%2, 69), 40, 9, %3
     rect_oco sum(%1, 16), sum(%2, 53), 25, 25, %3, 9
+%endmacro
+
+; (x, y, color)
+; card start x, y
+%macro draw_fohg 3
+    draw_card %1, %2, %3
+    rect_center_all sum(%1, HALF_CARD_SIZE_X), sum(%2, HALF_CARD_SIZE_Y), 9, 50, %3
+    rect_center_hor sum(%1, HALF_CARD_SIZE_X), sum(%2, HALF_CARD_SIZE_Y), 50, 9, %3
+    rect_center_hor sum(%1, HALF_CARD_SIZE_X), sum(%2, 67), 40, 9, %3
+    rect sum(%1, 16), sum(%2, 35), 9, 35, %3
+%endmacro
+
+; (x, y, color)
+; card start x, y
+%macro draw_trac 3
+    draw_card %1, %2, %3
+    rect_center_hor sum(%1, HALF_CARD_SIZE_X), sum(%2, 48), 9, 30, %3
+    rect sum(%1, 16), sum(%2, 48), 40, 9, %3
+    rect sum(%1, 16), sum(%2, 28), 9, 20, %3
+    rect sum(%1, 16), sum(%2, 69), 22, 9, %3
+%endmacro
+
+; (x, y, color)
+; card start x, y
+%macro draw_lott 3
+    draw_card %1, %2, %3
+    rect_center_hor sum(%1, HALF_CARD_SIZE_X), sum(%2, 48), 9, 30, %3
+    rect sum(%1, 16), sum(%2, 48), 40, 9, %3
+    rect sum(%1, 16), sum(%2, 28), 9, 50, %3
+    rect sum(%1, HALF_CARD_SIZE_X), sum(%2, 69), 20, 9, %3
+%endmacro
+
+; (x, y, color)
+; card start x, y
+%macro draw_bicc 3
+    draw_card %1, %2, %3
+    rect_center_all sum(%1, HALF_CARD_SIZE_X), sum(%2, HALF_CARD_SIZE_Y), 9, 60, %3
+    rect_center_hor sum(%1, HALF_CARD_SIZE_X), sum(%2, 34), 30, 9, %3
+    rect_center_hor sum(%1, HALF_CARD_SIZE_X), sum(%2, 62), 40, 9, %3
+    rect sum(%1, 47), sum(%2, 50), 9, 15, %3
 %endmacro
 
 draw_linha:    
@@ -157,33 +205,24 @@ start:
 	mov bl, 08h
 	int 10h
 
-    ; carta
-    ;rect 30, 30, 80, 110, 0x0f
+    ;draw_card 10, 10, 0x01
+    ;draw_bicc gridx(0), gridy(0), 0x04
+    draw_card gridx(0), gridy(0), 0x04    
+    draw_card gridx(1), gridy(0), 0x04
+    draw_card gridx(2), gridy(0), 0x04
+    draw_card gridx(3), gridy(0), 0x04
+    draw_card gridx(0), gridy(1), 0x04
+    draw_card gridx(1), gridy(1), 0x04
+    draw_card gridx(2), gridy(1), 0x04
+    draw_card gridx(3), gridy(1), 0x04
+    draw_card gridx(0), gridy(2), 0x04
+    draw_card gridx(1), gridy(2), 0x04
+    draw_card gridx(2), gridy(2), 0x04
+    draw_card gridx(3), gridy(2), 0x04
+    ;draw_lott gridx(3), gridy(1), 0x04
+    ;draw_lott gridx(3), gridy(2), 0x04
 
-    ; naipe cima
-    ;rect 37, 35, 3, 12, 0x00 ; 30 + 10, 30 + 5
-    ;rect_oco 37, 50, 12, 12, 0x0c, 2 ; 30 + 5, 30 + 20
-
-
-    draw_card 70, 30, 0x01
-    draw_glib 70, 30, 0x04
-    ; naipe baixo
-    ;rect 101, 123, 3, 12, 0x00  ; 90 + 10, 120-12-3
-    ;rect_oco 92, 108, 12, 12, 0x0c, 2 ; (30 - 5) + 80 - 15, 
-
-    ; (80/2 + 30) - 7, (110/2) + 30 - 7 | centro
-    ;rect 63, 78, 14, 14, 0x0c
-
-    ; outra
-
-    ; carta
-    ;rect_oco 28, 28, 76, 106, 0x09, 2
-    ;rect 30, 30, 72, 102, 0x0f
-
-    ;rect_center_all 66, 81, 9, 50, 0x0c
-    ;rect_center_hor 66, 81, 50, 9, 0x0c
-    ;rect_center_hor 66, 97, 40, 9, 0x0c
-    ;rect 46, 65, 9, 35, 0x0c
+    ;draw_lott gridx(4), gridy(3), 0x04    
 
     jmp halt
 
