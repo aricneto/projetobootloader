@@ -1,5 +1,34 @@
 # Projeto Bootloader
-Tipo um Guitar Hero só que em Assembly.
+Um jogo só que em Assembly.
+
+# Como jogar
+
+## Básico
+- Existem cinco simbolos: `trac`, `grib`, `lott`, `fohg` e `bicc`
+- E três cores: `azul`, `vermelho` e `verde`
+- No começo do jogo, o sistema escolhe uma carta para aperecer no centro
+	- O jogador 1 deve escolher uma carta para atacar a do centro
+	- O jogador 2 então escolhe uma carta para atacar a do centro
+	- As cartas de cada jogador são reveladas.
+	- O jogador 1 deve agora escolher uma carta para atacar a do jogador 2
+	- O jogador 2 então escolhe uma carta para atacar a do jogador 1
+	- Assim, ganha quem tiver mais pontos
+
+## Pontuação
+A pontuação é dada como um jogo de pedra-papel-tesoura, com algumas peculiaridades. Uma vitória equivale a `+2 pontos`, uma derrota a `-1 ponto`:
+- `trac` ganha de `bicc` e `grib`, mas perde para `lott` e `fohg`
+- `grib` ganha de `lott` e `bicc`, mas perde para `trac` e `fohg`
+- `lott` ganha de `trac` e `fohg`, mas perde para `bicc` e `grib`
+- `bicc` ganha de `fohg` e `lott`, mas perde para `grib` e `trac`
+- `fohg` ganha de `grib` e `trac`, mas perde para `lott` e `bicc`
+
+Além disso, a cor da carta influencia na pontuação:
+- Cartas que atacarem uma carta de mesma cor perdem `1 ponto`
+- Cartas que atacarem um rival ganham `1 ponto`. Rivais:
+	- `azul` é rival de `vermelho`
+	- `vermelho` é rival de `verde`
+	- `verde` é rival de `azul`
+- Cartas que atacarem outras cores se não as suas ou as rivais não perdem ou ganham pontos.
 
 # Sobre
 - `boot1.asm` inicia em `0x7c00` e carrega o setor de memória de boot2

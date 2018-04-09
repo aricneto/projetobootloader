@@ -8,6 +8,7 @@ HORIZONTAL equ 1
 %define sum(x,y) x + y
 %define diff(x,y) x - y
 %define mult(x,y) x * y
+%define divd(x,y) x / y
 
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
@@ -31,7 +32,7 @@ HORIZONTAL equ 1
 ; desenha um retângulo em («x», «y»)
 ; de tamanho «width», «length»
 ; de cor «color»
-%macro print_retangulo 5
+%macro rect 5
     mov word [x_coord], %1
     mov word [y_coord], %2
     mov word [width], %3
@@ -40,16 +41,60 @@ HORIZONTAL equ 1
     call draw_barras
 %endmacro
 
+; (x, y, width, length, color)
+; desenha um retângulo em («x», «y»)
+; de tamanho «width», «length»
+; de cor «color»
+; do centro pra fora (todas as direçoes)
+%macro rect_center_all 5
+    rect diff(%1, divd(%3, 2)), diff(%2, divd(%4, 2)), %3, %4, %5
+%endmacro
+
+; (x, y, width, length, color)
+; desenha um retângulo em («x», «y»)
+; de tamanho «width», «length»
+; de cor «color»
+; do centro pra fora horizontal
+%macro rect_center_hor 5
+    rect diff(%1, divd(%3, 2)), %2, %3, %4, %5
+%endmacro
+
+; (x, y, width, length, color)
+; desenha um retângulo em («x», «y»)
+; de tamanho «width», «length»
+; de cor «color»
+; do centro pra fora vertical
+%macro rect_center_ver 5
+    rect %1, diff(%2, divd(%4, 2)), %3, %4, %5
+%endmacro
+
 ; (x, y, width, length, color, thickness)
 ; desenha um retângulo oco em («x», «y»)
 ; de tamanho «width», «length»
 ; de cor «color»
 ; e grossura «thickness»
-%macro print_retangulo_oco 6
-    print_retangulo %1, %2, %3, %6, %5 ; x, y, width, thickness, color
-    print_retangulo %1, sum(%2, %4), %3, %6, %5 ; x, length, width, thickness, color
-    print_retangulo %1, %2, %6, %4, %5 ; x, y, thickness, length, color
-    print_retangulo sum(%1, %3), %2, %6, sum(%4, 1), %5 ; width, y, thickness, length, color
+%macro rect_oco 6
+    ;horizontais
+    rect %1, %2, %3, %6, %5 ; cima -> x, y, width, thickness, color
+    rect %1, diff(sum(%2, %4), %6), %3, %6, %5 ; baixo -> x, length, width, thickness, color
+    ;verticais
+    rect %1, %2, %6, %4, %5 ; x, y, thickness, length, color
+    rect diff(sum(%1, %3), %6), %2, %6, %4, %5 ; width, y, thickness, length, color
+%endmacro
+
+; (x, y, border_color)
+%macro draw_card 3
+    rect %1, %2, 72, 102, 0x0f
+    rect_oco diff(%1, 2), diff(%2, 2), 76, 106, %3, 2
+    rect_oco diff(%1, 3), diff(%2, 3), 78, 108, 0x0c, 1
+%endmacro
+
+; (x, y, color)
+; card start x, y
+%macro draw_glib 3
+    rect sum(%1, 16), sum(%2, 28), 9, 50, %3
+    rect sum(%1, 16), sum(%2, 69), 40, 9, %3
+    rect_oco sum(%1, 16), sum(%2, 53), 25, 25, %3, 9
 %endmacro
 
 draw_linha:    
@@ -96,21 +141,6 @@ refresh_video:
     int 10h
     ret
 
-draw_arena:
-    print_retangulo_oco 91, 170, 125, 10, 0x0b, 1
-
-    print_retangulo 89, 0, 3, 200, 0x0e
-    print_retangulo 214, 0, 3, 200, 0x0e
-
-    mov byte [num_barras], 5
-    .print_tabs:
-        print_linha word [tab_start], 0, 200, VERTICAL, 0x0c
-        add byte [tab_start], 21
-        dec byte [num_barras]
-        cmp byte [num_barras], 0
-        jg .print_tabs
-    ret
-
 start:
     ; setup
     xor ax, ax    ; ax <- 0
@@ -127,11 +157,33 @@ start:
 	mov bl, 08h
 	int 10h
 
-    print_retangulo 30, 30, 80, 110, 0x0f
-    print_retangulo 40, 35, 4, 12, 0x00
-    print_retangulo 35, 50, 15, 15, 0x0c
+    ; carta
+    ;rect 30, 30, 80, 110, 0x0f
 
-    ;call draw_arena
+    ; naipe cima
+    ;rect 37, 35, 3, 12, 0x00 ; 30 + 10, 30 + 5
+    ;rect_oco 37, 50, 12, 12, 0x0c, 2 ; 30 + 5, 30 + 20
+
+
+    draw_card 70, 30, 0x01
+    draw_glib 70, 30, 0x04
+    ; naipe baixo
+    ;rect 101, 123, 3, 12, 0x00  ; 90 + 10, 120-12-3
+    ;rect_oco 92, 108, 12, 12, 0x0c, 2 ; (30 - 5) + 80 - 15, 
+
+    ; (80/2 + 30) - 7, (110/2) + 30 - 7 | centro
+    ;rect 63, 78, 14, 14, 0x0c
+
+    ; outra
+
+    ; carta
+    ;rect_oco 28, 28, 76, 106, 0x09, 2
+    ;rect 30, 30, 72, 102, 0x0f
+
+    ;rect_center_all 66, 81, 9, 50, 0x0c
+    ;rect_center_hor 66, 81, 50, 9, 0x0c
+    ;rect_center_hor 66, 97, 40, 9, 0x0c
+    ;rect 46, 65, 9, 35, 0x0c
 
     jmp halt
 
