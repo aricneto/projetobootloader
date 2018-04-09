@@ -17,6 +17,11 @@ HALF_CARD_SIZE_Y equ divd(CARD_SIZE_Y, 2)
 %define gridx(x) sum(20, sum(mult(20, x), mult(CARD_SIZE_X, x)))
 %define gridy(y) sum(20, sum(mult(20, y), mult(CARD_SIZE_Y, y)))
 
+%define gridx_center(x) diff(210, sum(20, sum(mult(20, x), mult(CARD_SIZE_X, x))))
+
+%define gridx_bot(x) diff(385, sum(20, sum(mult(20, x), mult(CARD_SIZE_X, x))))
+%define gridy_bot(y) diff(sum(20, sum(mult(20, y), mult(CARD_SIZE_Y, y))), 25)
+
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
 ; de tamanho «tamanho»
@@ -92,8 +97,8 @@ HALF_CARD_SIZE_Y equ divd(CARD_SIZE_Y, 2)
 ; (x, y, border_color)
 %macro draw_card 3
     rect %1, %2, CARD_SIZE_X, CARD_SIZE_Y, 0x0f
-    rect_oco diff(%1, 2), diff(%2, 2), sum(CARD_SIZE_X, 4), sum(CARD_SIZE_Y, 4), %3, 2
-    rect_oco diff(%1, 3), diff(%2, 3), sum(CARD_SIZE_X, 6), sum(CARD_SIZE_Y, 6), 0x0c, 1
+    ;rect_oco diff(%1, 2), diff(%2, 2), sum(CARD_SIZE_X, 4), sum(CARD_SIZE_Y, 4), %3, 2
+    ;rect_oco diff(%1, 3), diff(%2, 3), sum(CARD_SIZE_X, 6), sum(CARD_SIZE_Y, 6), 0x0c, 1
 %endmacro
 
 ; (x, y, color)
@@ -205,24 +210,17 @@ start:
 	mov bl, 08h
 	int 10h
 
-    ;draw_card 10, 10, 0x01
-    ;draw_bicc gridx(0), gridy(0), 0x04
-    draw_card gridx(0), gridy(0), 0x04    
-    draw_card gridx(1), gridy(0), 0x04
-    draw_card gridx(2), gridy(0), 0x04
-    draw_card gridx(3), gridy(0), 0x04
-    draw_card gridx(0), gridy(1), 0x04
-    draw_card gridx(1), gridy(1), 0x04
-    draw_card gridx(2), gridy(1), 0x04
-    draw_card gridx(3), gridy(1), 0x04
-    draw_card gridx(0), gridy(2), 0x04
-    draw_card gridx(1), gridy(2), 0x04
-    draw_card gridx(2), gridy(2), 0x04
-    draw_card gridx(3), gridy(2), 0x04
-    ;draw_lott gridx(3), gridy(1), 0x04
-    ;draw_lott gridx(3), gridy(2), 0x04
+    draw_bicc gridx(0), gridy(0), 0x0c    
+    draw_fohg gridx(1), gridy(0), 0x09
+    draw_trac gridx(2), gridy(0), 0x0c
 
-    ;draw_lott gridx(4), gridy(3), 0x04    
+    draw_glib gridx_center(0), 190, 0x02    
+    draw_fohg gridx_center(1), 190, 0x0c
+    draw_bicc gridx_center(2), 190, 0x0c
+
+    draw_lott gridx_bot(0), gridy_bot(3), 0x02
+    draw_glib gridx_bot(1), gridy_bot(3), 0x09
+    draw_fohg gridx_bot(2), gridy_bot(3), 0x0c
 
     jmp halt
 
