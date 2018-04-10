@@ -274,6 +274,24 @@ color db 0
 size 	  dw 0
 direction db 0
 
+%macro random 1
+    mov word [modulo], %1
+    call rand
+%endmacro
+
+; rand é salvo em «dl»
+rand:
+    mov ah, 00h  ; interrupts to get system time
+    int 1ah      ; CX:DX now hold number of clock ticks since midnight
+    mov ax,dx
+    xor dx,dx
+    mov cx, word [modulo]
+    div cx
+    mov cx, 1
+    ret
+
+modulo dw 0
+
 refresh_video:
     ; [int 10h 00h] - modo de video
     mov al, 13h ; [modo de video VGA]
