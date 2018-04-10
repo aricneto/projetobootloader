@@ -81,6 +81,20 @@ calc_grid:
     call draw_barras
 %endmacro
 
+; (x, y, width, length, color)
+; desenha um retângulo em («x», «y»)
+; de tamanho «width», «length»
+; de cor pré-definida pela variavel «byte color_var»
+%macro rect_color_var 4
+    mov cl, byte [color_var]
+    mov byte [color], cl
+    mov cx, %1
+    mov dx, %2
+    mov ax, %3
+    mov si, %4
+    call draw_barras
+%endmacro
+
 select_start dw 0
 select_end dw 0
 
@@ -113,8 +127,8 @@ select_end dw 0
     rect word [x_init], %2, %6, %4, %5 ; width, y, thickness, length, color
 %endmacro
 
-; (x, y, border_color)
-%macro draw_card 3
+; (x, y)
+%macro draw_card 2
     get_grid %1, %2
     rect ax, bx, CARD_SIZE_X, CARD_SIZE_Y, 0x0f
     pop bx
@@ -140,89 +154,89 @@ select_end dw 0
 ; (x, y, color)
 ; card start x, y
 %macro draw_glib 3
-    draw_card %1, %2, %3
+    draw_card %1, %2
 
     add_x 16
     add_y 28
-    rect word [x_init], word [y_init], 9, 50, %3
+    rect_color_var word [x_init], word [y_init], 9, 50
     add_y 41    
-    rect word [x_init], word [y_init], 40, 9, %3
+    rect_color_var word [x_init], word [y_init], 40, 9
     sub_y 20
     add_x 15
-    rect word [x_init], word [y_init], 9, 25, %3
+    rect_color_var word [x_init], word [y_init], 9, 25
     
 %endmacro
 
 ; (x, y, color)
 ; card start x, y
 %macro draw_fohg 3
-    draw_card %1, %2, %3
+    draw_card %1, %2
 
     add_x 11 ; x = 11
     add_y 51 ; y = 51
-    rect word [x_init], word [y_init], 50, 9, %3
+    rect_color_var word [x_init], word [y_init], 50, 9
     add_x 5  ; x = 16
     add_y 16 ; y = 67
-    rect word [x_init], word [y_init], 40, 9, %3
+    rect_color_var word [x_init], word [y_init], 40, 9
     sub_y 32 ; y = 35
-    rect word [x_init], word [y_init], 9, 35, %3
+    rect_color_var word [x_init], word [y_init], 9, 35
     sub_y 5 ; y = 30
     add_x 15 ; x = 15
-    rect word [x_init], word [y_init], 9, 50, %3
+    rect_color_var word [x_init], word [y_init], 9, 50
 %endmacro
 
 ; (x, y, color)
 ; card start x, y
 %macro draw_trac 3
-    draw_card %1, %2, %3
+    draw_card %1, %2
 
     add_x 16 ; x = 16
     add_y 28 ; y = 28
-    rect word [x_init], word [y_init], 9, 20, %3
+    rect_color_var word [x_init], word [y_init], 9, 20
     add_y 20 ; y = 48
-    rect word [x_init], word [y_init], 40, 9, %3
+    rect_color_var word [x_init], word [y_init], 40, 9
     add_y 21 ; y = 69
-    rect word [x_init], word [y_init], 22, 9, %3
+    rect_color_var word [x_init], word [y_init], 22, 9
     add_x 14 ; x = 30
     sub_y 21 ; y = 48
-    rect word [x_init], word [y_init], 9, 30, %3
+    rect_color_var word [x_init], word [y_init], 9, 30
 %endmacro
 
 ; (x, y, color)
 ; card start x, y
 %macro draw_lott 3
-    draw_card %1, %2, %3
+    draw_card %1, %2
 
     add_x 16 ; x = 16
     add_y 48 ; y = 48
-    rect word [x_init], word [y_init], 40, 9, %3
+    rect_color_var word [x_init], word [y_init], 40, 9
     sub_y 20 ; y = 28
-    rect word [x_init], word [y_init], 9, 50, %3
+    rect_color_var word [x_init], word [y_init], 9, 50
     add_x 16 ; x = 32
     add_y 20 ; y = 48
-    rect word [x_init], word [y_init], 9, 30, %3
+    rect_color_var word [x_init], word [y_init], 9, 30
     add_x 4 ; x = 36
     add_y 21 ; y = 69
-    rect word [x_init], word [y_init], 20, 9, %3
+    rect_color_var word [x_init], word [y_init], 20, 9
 %endmacro
 
 ; (x, y, color)
 ; card start x, y
 %macro draw_bicc 3
-    draw_card %1, %2, %3
+    draw_card %1, %2
 
     add_x 16 ; x = 16
     add_y 62 ; y = 62
-    rect word [x_init], word [y_init], 40, 9, %3
+    rect_color_var word [x_init], word [y_init], 40, 9
     add_x 5 ; x = 21
     sub_y 28 ; y = 34
-    rect word [x_init], word [y_init], 30, 9, %3
+    rect_color_var word [x_init], word [y_init], 30, 9
     add_x 10 ; x = 31
     sub_y 14 ; y = 20
-    rect word [x_init], word [y_init], 9, 60, %3
+    rect_color_var word [x_init], word [y_init], 9, 60
     add_x 16 ; x = 47
     add_y 30 ; y = 50
-    rect word [x_init], word [y_init], 9, 15, %3
+    rect_color_var word [x_init], word [y_init], 9, 15
 %endmacro
 
 draw_linha:    
@@ -271,6 +285,7 @@ x_init dw 0
 y_init dw 0
 
 color db 0
+color_var db 0
 size 	  dw 0
 direction db 0
 
@@ -283,14 +298,34 @@ direction db 0
 rand:
     mov ah, 00h  ; interrupts to get system time
     int 1ah      ; CX:DX now hold number of clock ticks since midnight
-    mov ax,dx
-    xor dx,dx
+    mov ax, dx
+    xor dx, dx
     mov cx, word [modulo]
     div cx
     mov cx, 1
     ret
 
 modulo dw 0
+
+; gera uma cor aleatoria e carrega em «color»
+random_color:
+    random 3
+
+    cmp dl, 0
+    je .red
+    cmp dl, 1
+    je .green
+    jmp .blue
+    
+    .red:
+        mov byte [color_var], 0x0c
+        ret
+    .green:
+        mov byte [color_var], 0x02
+        ret
+    .blue:
+        mov byte [color_var], 0x09
+        ret
 
 refresh_video:
     ; [int 10h 00h] - modo de video
@@ -341,6 +376,50 @@ p_selection dw 0
 ; numero do jogador atual (0 ou 2)
 p_number dw 0
 
+current_x dw 0
+current_y dw 0
+
+play_cards:
+    
+    .play:
+        call random_color
+        random 5
+        cmp dl, 0
+        je .trac
+
+        cmp dl, 1
+        je .glib
+
+        cmp dl, 2
+        je .lott
+        
+        cmp dl, 3
+        je .fohg
+
+        cmp dl, 4
+        je .bicc
+
+        .trac:
+            draw_trac word [current_x], word [current_y], 0 
+            jmp .end
+        .glib:
+            draw_glib word [current_x], word [current_y], 0 
+            jmp .end
+        .lott:
+            draw_lott word [current_x], word [current_y], 0 
+            jmp .end
+        .fohg:
+            draw_fohg word [current_x], word [current_y], 0 
+            jmp .end
+        .bicc:
+            draw_bicc word [current_x], word [current_y], 0 
+            jmp .end
+
+        .end:
+            inc byte [current_x]
+            jmp .play
+
+
 start:
     ; setup
     xor ax, ax    ; ax <- 0
@@ -357,21 +436,24 @@ start:
 	mov bl, 08h
 	int 10h
 
-    draw_trac 0, 0, 0x0c
-    draw_glib 1, 0, 0x0c
-    draw_fohg 2, 0, 0x0c
-    
-    draw_trac 0, 1, 0x0c
-    draw_lott 1, 1, 0x0c
-    draw_trac 2, 1, 0x0c
-
-    draw_glib 0, 2, 0x0c
-    draw_fohg 1, 2, 0x0c
-    draw_fohg 2, 2, 0x0c
+    call play_cards
+    ;draw_trac 0, 0, 0x0c
+    ;draw_glib 1, 0, 0x0c
+    ;draw_fohg 2, 0, 0x0c
+    ;
+    ;draw_trac 0, 1, 0x0c
+    ;draw_lott 1, 1, 0x0c
+    ;draw_trac 2, 1, 0x0c
+;
+    ;draw_glib 0, 2, 0x0c
+    ;draw_fohg 1, 2, 0x0c
+    ;draw_fohg 2, 2, 0x0c
 
     call game_loop
 
     jmp halt
+
+cards_player_1 db 0b00110011, 0b00110011, 0b00110011
 
 halt:
     jmp $
