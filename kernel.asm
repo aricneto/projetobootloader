@@ -1,18 +1,11 @@
 org 0x7e00
 jmp 0x0000:start
 
-%define sum(x,y) x + y
-%define diff(x,y) x - y
-%define mult(x,y) x * y
-%define divd(x,y) x / y
-
 ; constantes
 VERTICAL equ 0
 HORIZONTAL equ 1
 CARD_SIZE_X equ 72
 CARD_SIZE_Y equ 102
-HALF_CARD_SIZE_X equ divd(CARD_SIZE_X, 2)
-HALF_CARD_SIZE_Y equ divd(CARD_SIZE_Y, 2)
 
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
@@ -36,36 +29,42 @@ gridx dw 0
 gridy dw 0
 
 ; (x, y)
+; calcula a grade para posicionamento
+; das cartas, guarda em «ax», «bx»
 %macro get_grid 2
-    mov word [gridx], %1
-    mov word [gridy], %2
+    push ax
+    push bx
+    mov ax, %1
+    mov bx, %2
     call calc_grid
 %endmacro
 
 calc_grid:
-    cmp word [gridy], 0
+    cmp bx, 0
     je .top
-    cmp word [gridy], 1
+    cmp bx, 1
     je .mid
     jmp .bot
 
     .top:
-        mov word [gridy], 20
-        imul 92, word [gridx]
-        add word [gridx], 20
+        mov bx, 20
+        imul ax, 92
+        add ax, 20
         jmp .end
     .mid:
-        mov word [gridy], 190
-        imul word [gridx], -92
-        add word [gridx], 190
+        mov bx, 190
+        imul ax, -92
+        add ax, 375
         jmp .end
     .bot:
-        mov word [gridy], 300
-        imul word [gridx], -92
-        add word [gridx], 365
+        mov bx, 355
+        imul ax, -92
+        add ax, 545
         jmp .end
     
     .end:
+        mov word [gridx], ax
+        mov word [gridy], bx
         ret
         
 
@@ -86,11 +85,14 @@ select_start dw 0
 select_end dw 0
 
 %macro draw_selection 3
-    mov word [select_start], %1
-    mov word [select_end], %2
-    sub word [select_end], 3
-    sub word [select_start], 3
-    rect_oco word [select_start], word [select_end], sum(CARD_SIZE_X, 6), sum(CARD_SIZE_Y, 6), %3, 3
+    get_grid %1, %2
+    sub ax, 3
+    sub bx, 3
+    mov word [select_start], ax
+    mov word [select_end], bx
+    rect_oco word [select_start], word [select_end], CARD_SIZE_X + 6, CARD_SIZE_Y + 6, %3, 3
+    pop bx
+    pop ax
 %endmacro
 
 ; (x, y, width, length, color, thickness)
@@ -113,9 +115,10 @@ select_end dw 0
 
 ; (x, y, border_color)
 %macro draw_card 3
-    rect %1, %2, CARD_SIZE_X, CARD_SIZE_Y, 0x0f
-    ;rect_oco diff(%1, 2), diff(%2, 2), sum(CARD_SIZE_X, 4), sum(CARD_SIZE_Y, 4), %3, 2
-    ;rect_oco diff(%1, 3), diff(%2, 3), sum(CARD_SIZE_X, 6), sum(CARD_SIZE_Y, 6), 0x0c, 1
+    get_grid %1, %2
+    rect ax, bx, CARD_SIZE_X, CARD_SIZE_Y, 0x0f
+    pop bx
+    pop ax
 %endmacro
 
 %macro add_x 1
@@ -278,8 +281,6 @@ refresh_video:
     int 10h
     ret
 
-kaka dw 10
-
 start:
     ; setup
     xor ax, ax    ; ax <- 0
@@ -296,25 +297,23 @@ start:
 	mov bl, 08h
 	int 10h
 
-    ;rect word [kaka], word [kaka], word [kaka], word [kaka], 0x0c
-    ;draw_bicc word [kaka], gridy(0), 0x0c
+    draw_trac 0, 0, 0x0c
+    draw_glib 1, 0, 0x0c
+    draw_fohg 2, 0, 0x0c
+    
+    draw_trac 0, 1, 0x0c
+    draw_lott 1, 1, 0x0c
+    draw_trac 2, 1, 0x0c
 
-    get_grid 2, 0
-    draw_trac gridx, gridy, 0x0c
+    draw_glib 0, 2, 0x0c
+    draw_fohg 1, 2, 0x0c
+    draw_fohg 2, 2, 0x0c
 
-    ;draw_glib gridx_center(0), 190, 0x02    
-    ;draw_fohg gridx_center(1), 190, 0x0c
-    ;draw_bicc gridx_center(2), 190, 0x0c
-;
-    ;draw_lott gridx_bot(0), gridy_bot(3), 0x02
-    ;draw_glib gridx_bot(1), gridy_bot(3), 0x09
-    ;draw_fohg gridx_bot(2), gridy_bot(3), 0x0c
+    draw_selection 1, 2, 0x01
+    draw_selection 0, 0, 0x01
+    draw_selection 1, 1, 0x0c
 
     jmp halt
-
-num_barras db 2
-barra_start dw 0
-tab_start dw 111
 
 halt:
     jmp $
