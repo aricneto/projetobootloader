@@ -380,7 +380,7 @@ current_x dw 0
 current_y dw 0
 
 play_cards:
-    
+    mov byte [current_x], 0
     .play:
         call random_color
         random 5
@@ -401,24 +401,28 @@ play_cards:
 
         .trac:
             draw_trac word [current_x], word [current_y], 0 
-            jmp .end
+            jmp .next
         .glib:
             draw_glib word [current_x], word [current_y], 0 
-            jmp .end
+            jmp .next
         .lott:
             draw_lott word [current_x], word [current_y], 0 
-            jmp .end
+            jmp .next
         .fohg:
             draw_fohg word [current_x], word [current_y], 0 
-            jmp .end
+            jmp .next
         .bicc:
             draw_bicc word [current_x], word [current_y], 0 
-            jmp .end
+            jmp .next
 
-        .end:
+        .next:
             inc byte [current_x]
-            jmp .play
+            cmp byte [current_x], 4 ; 3 cartas para cada jogador
+            jl .play
+            jmp .finish
 
+        .finish:
+            ret
 
 start:
     ; setup
@@ -436,6 +440,8 @@ start:
 	mov bl, 08h
 	int 10h
 
+    call play_cards
+    mov byte [current_y], 2
     call play_cards
     ;draw_trac 0, 0, 0x0c
     ;draw_glib 1, 0, 0x0c
