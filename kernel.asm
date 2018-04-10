@@ -378,9 +378,20 @@ p_number dw 0
 
 current_x dw 0
 current_y dw 0
+max_cards dw 0
+
+; (current x, current y, num_cartas)
+; colocar cartas aleatorias na mesa
+; começando da posicao «x», «y»
+; até «num_cartas»
+%macro lay_cards 3
+    mov word [current_x], %1
+    mov word [current_y], %2
+    mov word [max_cards], %3
+    call play_cards
+%endmacro
 
 play_cards:
-    mov byte [current_x], 0
     .play:
         call random_color
         random 5
@@ -416,8 +427,9 @@ play_cards:
             jmp .next
 
         .next:
-            inc byte [current_x]
-            cmp byte [current_x], 4 ; 3 cartas para cada jogador
+            mov cx, word [max_cards]
+            inc word [current_x]
+            cmp word [current_x], cx ; 3 cartas para cada jogador
             jl .play
             jmp .finish
 
@@ -440,9 +452,9 @@ start:
 	mov bl, 08h
 	int 10h
 
-    call play_cards
-    mov byte [current_y], 2
-    call play_cards
+    lay_cards 0, 0, 3
+    lay_cards 1, 1, 1
+    lay_cards 0, 2, 3
     ;draw_trac 0, 0, 0x0c
     ;draw_glib 1, 0, 0x0c
     ;draw_fohg 2, 0, 0x0c
