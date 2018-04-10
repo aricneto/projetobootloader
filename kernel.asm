@@ -299,6 +299,48 @@ refresh_video:
     int 10h
     ret
 
+clear_selection:
+    draw_selection word [p_selection], word [p_number], 0x00
+    ret
+
+game_loop:
+
+    .read:
+        ; [int 16h 00h] - ler teclado
+        mov ah, 00h
+        int 16h ; salva tecla em «ah»
+        cmp ah, 4bh ; seta esquerda
+        je .left
+        cmp ah, 4dh ; seta direita
+        je .right
+        jmp game_loop
+
+        .left:
+            call clear_selection
+            dec word [p_selection]
+            cmp word [p_selection], 0
+            jge .draw
+            mov word [p_selection], 2
+            jmp .draw          
+
+        .right:
+            call clear_selection
+            inc word [p_selection]
+            cmp word [p_selection], 2
+            jle .draw
+            mov word [p_selection], 0
+            jmp .draw
+        
+        .draw:
+            draw_selection word [p_selection], word [p_number], 0x09
+
+        jmp game_loop
+
+; carta selecionada pelo player
+p_selection dw 0
+; numero do jogador atual (0 ou 2)
+p_number dw 0
+
 start:
     ; setup
     xor ax, ax    ; ax <- 0
@@ -327,9 +369,7 @@ start:
     draw_fohg 1, 2, 0x0c
     draw_fohg 2, 2, 0x0c
 
-    draw_selection 1, 2, 0x01
-    draw_selection 0, 0, 0x01
-    draw_selection 1, 1, 0x0c
+    call game_loop
 
     jmp halt
 
