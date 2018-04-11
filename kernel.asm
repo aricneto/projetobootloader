@@ -153,6 +153,14 @@ y_init_sp dw 0
     pop ax
 %endmacro
 
+; (x, y)
+%macro erase_card 2
+    get_grid %1, %2
+    rect ax, bx, CARD_SIZE_X, CARD_SIZE_Y, 0x00
+    pop bx
+    pop ax
+%endmacro
+
 %macro add_x 1
     add word [x_init], %1
 %endmacro
@@ -367,11 +375,13 @@ game_loop:
     .read:
         ; [int 16h 00h] - ler teclado
         mov ah, 00h
-        int 16h ; salva tecla em «ah»
+        int 16h ; salva tecla em «ah, al»
         cmp ah, 4bh ; seta esquerda
         je .left
         cmp ah, 4dh ; seta direita
         je .right
+        cmp al, 0dh
+        je .select
         jmp game_loop
 
         .left:
@@ -389,6 +399,12 @@ game_loop:
             jle .draw
             mov word [p_selection], 0
             jmp .draw
+
+        .select:
+            call clear_selection
+            draw_bicc 2, 1, 0
+            erase_card word [p_selection], word [p_number]
+            jmp game_loop
         
         .draw:
             draw_selection word [p_selection], word [p_number], 0x0d
