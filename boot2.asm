@@ -1,5 +1,5 @@
 org 0x500
-jmp 0x0000:start
+jmp 0x0000:load_menu
 
 
 str1 db 'Carregando estrutura para o kernel...',10, 13, 0

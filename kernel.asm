@@ -219,10 +219,7 @@ y_init_sp dw 0
     rect_color_var word [x_init], word [y_init], 9, 20
     add_y 20 ; y = 48
     rect_color_var word [x_init], word [y_init], 40, 9
-    add_y 21 ; y = 69
-    rect_color_var word [x_init], word [y_init], 22, 9
     add_x 14 ; x = 30
-    sub_y 21 ; y = 48
     rect_color_var word [x_init], word [y_init], 9, 30
 %endmacro
 
