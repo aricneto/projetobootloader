@@ -7,6 +7,9 @@ HORIZONTAL equ 1
 CARD_SIZE_X equ 72
 CARD_SIZE_Y equ 102
 
+DECK equ 0
+ATTACK equ 1
+
 ; cada carta ocupa 5 bits
 ; cartas
 TRAC equ 0 ; 000|00-000
@@ -326,6 +329,18 @@ record_card_attack:
     shl dword [cards_attack], 3
     ret
 
+; (deck [DECK ou ATTACK], jogador, carta)
+; procura uma carta e salva em dl
+%macro search_card 3
+    mov al, %1
+    mov byte [query_deck], al
+    mov al, %2
+    mov byte [query_player], al
+    mov ax, %3
+    mov word [query_card], ax
+    call search_carta
+%endmacro
+
 %macro random 1
     mov word [modulo], %1
     call rand
@@ -427,6 +442,7 @@ game_loop:
                 ; player 2 tem os 9 primeiros bits (menos significantes)
                 ; então não precisamos de shift
 
+                search_card DECK, byte [p_number], word [p_selection]
                 call move_card
 
                 mov word [p_number], 0
@@ -435,7 +451,7 @@ game_loop:
             .goto_p_two:
                 ; player 1 tem os 9 proximos bits depois de player 2
 
-                shr dword [cards_player_temp], 9
+                search_card DECK, byte [p_number], word [p_selection]
                 call move_card
 
                 mov word [p_number], 2
@@ -449,21 +465,9 @@ game_loop:
 
 ; Move a carta selecionada para o centro
 move_card:
-    ; (2 - x) = quantas vezes teremos que dar 3-bit shift
-    ; 3 * (2 - x) = 6 - 3x
-
-    mov cl, 6
-    imul ax, word [p_selection], 3
-    sub cl, al
-    shr dword [cards_player_temp], cl
-    and dword [cards_player_temp], MASK_GLYPH
-
-    ; carta é encontrada e salva em «dl»
-    mov dl, byte [cards_player_temp]
+    ; encontrar posiçao para por a carta
     mov eax, dword [cards_player_temp]
     save_card_attack eax
-
-    ; encontrar posiçao para por a carta
 
     cmp byte [round_number], 2
     jg .sec_round
@@ -493,6 +497,50 @@ move_card:
     call play_cards
     ret
 
+; o codigo da carta encontrada é salvo em «dl»
+search_carta:
+    cmp byte [query_deck], DECK
+    je .deck
+    jmp .attack
+
+    .deck:
+        mov eax, dword [cards_player]
+        jmp .skip
+    .attack:
+        mov eax, dword [cards_attack]
+
+    .skip:
+    mov dword [cards_player_temp], eax
+
+    cmp byte [query_player], 0
+    je .player_1
+    cmp byte [query_player], 1
+    je .next
+    cmp byte [query_player], 2
+    je .player_2
+
+    .player_1:
+        shr dword [cards_player_temp], 12
+        jmp .next
+    .player_2:
+        shr dword [cards_player_temp], 3
+        jmp .next
+    .next:
+
+    mov cl, 6
+    imul ax, word [query_card], 3
+    sub cl, al
+    shr dword [cards_player_temp], cl
+    and dword [cards_player_temp], MASK_GLYPH
+
+    ; carta é encontrada e salva em «dl»
+    mov dl, byte [cards_player_temp]
+
+    ret
+
+query_deck db 0
+query_player db 0
+query_card dw 0
 
 ; variavel que determina se o programa está
 ; distribuindo as cartas ou apenas as desenhando
@@ -588,6 +636,20 @@ play_cards:
         .finish:
             ret
 
+; ««« DEBUG »»»
+%macro debug_macro 0
+    ; printar o numero da carta do centro
+    mov ah, 09h
+    mov al, byte [cards_player] ; typecast do cards para byte (primeiros 8 bits)
+    and al, MASK_GLYPH ; AND com 0b111 para zerar os outros bits
+    add al, '0'
+    mov bh, 0
+    mov bl, 0x0c
+    mov cx, 1
+    int 10h
+%endmacro
+; ««« DEBUG »»»
+
 start:
     ; setup
     xor ax, ax    ; ax <- 0
@@ -614,15 +676,9 @@ start:
 
     shr dword [cards_player], 3 ; ultimos 3 bits nao sao usados
 
-    ; printar o numero da carta do centro
-    mov ah, 09h
-    mov al, byte [cards_player] ; typecast do cards para byte (primeiros 8 bits)
-    and al, MASK_GLYPH ; AND com 0b111 para zerar os outros bits
-    add al, '0'
-    mov bh, 0
-    mov bl, 0x0c
-    mov cx, 1
-    int 10h
+    ; ««« DEBUG »»»
+    ; debug_macro
+    ; ««« DEBUG »»»
 
     mov word [p_number], 2 ; o jogador a ir primeiro
     mov word [color_var], BLU ; a cor do seletor é dada pela variavel «color_var»
