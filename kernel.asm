@@ -66,9 +66,9 @@ calc_grid:
         add ax, 20
         jmp .end
     .mid:
-        mov bx, 190
+        mov bx, 185
         imul ax, 92
-        add ax, 190
+        add ax, 100
         jmp .end
     .bot:
         mov bx, 356
@@ -307,6 +307,25 @@ color_value db 0 ; usado para salvar a carta escolhida
 size 	  dw 0
 direction db 0
 
+%macro save_card 1
+    or dword [cards_player], %1
+    call record_card
+%endmacro
+
+%macro save_card_attack 1
+    or dword [cards_attack], %1
+    call record_card_attack
+%endmacro
+
+record_card:
+    inc byte [cards_dealt]
+    shl dword [cards_player], 3
+    ret
+
+record_card_attack:
+    shl dword [cards_attack], 3
+    ret
+
 %macro random 1
     mov word [modulo], %1
     call rand
@@ -399,6 +418,8 @@ game_loop:
 
             shr dword [cards_player_temp], 3 ; tirar os bits da carta do centro
             
+            inc byte [round_number]
+
             cmp word [p_number], 2
             je .goto_p_one
             jmp .goto_p_two
@@ -437,27 +458,64 @@ move_card:
     shr dword [cards_player_temp], cl
     and dword [cards_player_temp], MASK_GLYPH
 
+    ; carta é encontrada e salva em «dl»
     mov dl, byte [cards_player_temp]
+    mov eax, dword [cards_player_temp]
+    save_card_attack eax
 
-    push ax
-    mov ax, word [p_number]
-    mov word [current_x], ax
-    pop ax
+    ; encontrar posiçao para por a carta
 
+    cmp byte [round_number], 2
+    jg .sec_round
+    jmp .fst_round
+    .fst_round:
+        cmp word [p_number], 0
+        je .f_p1
+        jmp .f_p2
+        .f_p1:
+            mov word [current_x], 1
+            jmp .skip
+        .f_p2:
+            mov word [current_x], 3
+            jmp .skip
+    .sec_round:
+        cmp word [p_number], 0
+        je .s_p1
+        jmp .s_p2
+        .s_p1:
+            mov word [current_x], 4
+            jmp .skip
+        .s_p2:
+            mov word [current_x], 0
+            jmp .skip
+            
+    .skip:
     call play_cards
     ret
 
+
+; variavel que determina se o programa está
+; distribuindo as cartas ou apenas as desenhando
+is_dealing db 0
+
 ; carta selecionada pelo player
 p_selection dw 0
+
 ; numero do jogador atual (0 ou 2)
 p_number dw 0
 
+; numero do "round" (quantas vezes já trocou de jogador)
+round_number db 0
+
+; "array" de cartas geradas
 cards_player dd 0
+; "array" de cartas escolhidas
+cards_attack dd 0
+; "array" temporario para calculos
 cards_player_temp dd 0
 
+; numero de cartas colocadas (counter)
 cards_dealt db 0
-selected_card db 0
-
 
 current_x dw 0
 current_y dw 0
@@ -476,16 +534,6 @@ max_cards dw 0
     call play_cards
 %endmacro
 
-%macro save_card 1
-    or dword [cards_player], %1
-    call record_card
-%endmacro
-
-record_card:
-    inc byte [cards_dealt]
-    shl dword [cards_player], 3
-    ret
-
 play_cards:
     cmp byte [is_dealing], 1
     je .random
@@ -493,6 +541,9 @@ play_cards:
 
     .random:
         random 5
+        mov byte [cards_player_temp], dl
+        mov eax, dword [cards_player_temp]
+        save_card eax
 
     .play:
 
@@ -513,44 +564,19 @@ play_cards:
 
         .trac:
             draw_trac word [current_x], word [current_y], 0
-            cmp byte [is_dealing], 1
-            je .tcnt
-            jmp .finish
-            .tcnt:
-                save_card TRAC
-                jmp .next
+            jmp .next
         .glib:
             draw_glib word [current_x], word [current_y], 0
-            cmp byte [is_dealing], 1
-            je .gcnt
-            jmp .finish
-            .gcnt:
-                save_card GLIB
-                jmp .next
+            jmp .next
         .lott:
             draw_lott word [current_x], word [current_y], 0 
-            cmp byte [is_dealing], 1
-            je .lcnt
-            jmp .finish
-            .lcnt:
-                save_card LOTT
-                jmp .next
+            jmp .next
         .fohg:
             draw_fohg word [current_x], word [current_y], 0 
-            cmp byte [is_dealing], 1
-            je .fcnt
-            jmp .finish
-            .fcnt:
-                save_card FOHG
-                jmp .next
+            jmp .next
         .bicc:
             draw_bicc word [current_x], word [current_y], 0 
-            cmp byte [is_dealing], 1
-            je .bcnt
-            jmp .finish
-            .bcnt:
-                save_card BICC
-                jmp .next
+            jmp .next
 
         .next:
             mov dx, word [max_cards]
@@ -561,13 +587,6 @@ play_cards:
 
         .finish:
             ret
-
-
-current_card db 0
-
-; variavel que determina se o programa está
-; distribuindo as cartas ou apenas as desenhando
-is_dealing db 0
 
 start:
     ; setup
@@ -590,7 +609,7 @@ start:
     mov byte [is_dealing], 1
     lay_cards 0, 0, 3, RED
     lay_cards 0, 2, 3, BLU
-    lay_cards 1, 1, 1, GRN
+    lay_cards 2, 1, 1, GRN
     mov byte [is_dealing], 0
 
     shr dword [cards_player], 3 ; ultimos 3 bits nao sao usados
