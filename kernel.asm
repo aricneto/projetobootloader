@@ -20,7 +20,6 @@ GRN  equ 8  ; 000|01-000
 BLU  equ 16 ; 000|10-000
 
 MASK_GLYPH equ 0b00000111 ; AND mask para encontrar o tipo da carta
-MASK_COLOR equ 0b00011000 ; AND mask para encontrar a cor da carta
 
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
@@ -113,6 +112,7 @@ calc_grid:
 select_start dw 0
 select_end dw 0
 
+; (gridx, griy, color)
 %macro draw_selection 3
     get_grid %1, %2
     sub ax, 3
@@ -391,7 +391,7 @@ game_loop:
             jmp .draw
         
         .draw:
-            draw_selection word [p_selection], word [p_number], 0x09
+            draw_selection word [p_selection], word [p_number], 0x0d
 
         jmp game_loop
 
@@ -407,14 +407,16 @@ current_x dw 0
 current_y dw 0
 max_cards dw 0
 
-; (current x, current y, num_cartas)
+; (current x, current y, num_cartas, cor)
 ; colocar cartas aleatorias na mesa
 ; começando da posicao «x», «y»
 ; até «num_cartas»
-%macro lay_cards 3
+; de cor «cor»
+%macro lay_cards 4
     mov word [current_x], %1
     mov word [current_y], %2
     mov word [max_cards], %3
+    mov word [color_var], %4
     call play_cards
 %endmacro
 
@@ -425,41 +427,12 @@ max_cards dw 0
 
 record_card:
     inc byte [cards_dealt]
-    cmp byte [cards_dealt], 5
-    jle .shift
-    jmp .end
-    .shift:
-        shl dword [cards_player], 5
-    .end:
-        ret
+    shl dword [cards_player], 3
+    ret
 
 play_cards:
     .play:
-        call random_color
         random 5
-
-        mov dh, byte [color_value]
-
-        cmp dh, RED
-        je .red
-        
-        cmp dh, GRN
-        je .grn
-
-        cmp dh, BLU
-        je .blu
-
-        .red:
-            or dword [cards_player], RED
-            jmp .continue
-        .grn:
-            or dword [cards_player], GRN
-            jmp .continue
-        .blu:
-            or dword [cards_player], BLU
-            jmp .continue
-
-        .continue:
 
         cmp dl, 0
         je .trac
@@ -478,7 +451,7 @@ play_cards:
 
         .trac:
             save_card TRAC
-            draw_trac word [current_x], word [current_y], 0 
+            draw_trac word [current_x], word [current_y], 0
             jmp .next
         .glib:
             save_card GLIB
@@ -505,8 +478,7 @@ play_cards:
             jmp .finish
 
         .finish:
-            ; nao usamos os ultimos 2 bits, entao mover a info pra eles
-            ;shr dword [cards_player], 2
+            shr dword [cards_player], 3 ; ultimos 3 bits nao sao usados
             ret
 
 
@@ -517,6 +489,7 @@ start:
     xor ax, ax    ; ax <- 0
     mov ds, ax    ; ds <- 0
     mov es, ax    ; es <- 0
+    mov ds, ax    ; ds <- 0
 
     ; [int 10h 00h] - modo de video
     mov al, 12h ; [modo de video VGA 640x480 16 color graphics]
@@ -525,13 +498,13 @@ start:
 
     ; [int 10h 0bh] - atributos de video
 	mov bh, 0
-	mov bl, 08h
+	mov bl, 08h ; cor da tela
     mov ah, 0bh
 	int 10h
 
-    lay_cards 0, 0, 3
-    ;lay_cards 1, 1, 1
-    lay_cards 0, 2, 3
+    lay_cards 0, 0, 3, 0x0c
+    lay_cards 1, 1, 1, 0x09
+    lay_cards 0, 2, 3, 0x02
 
     ; printar o numero da ultima carta
     mov ah, 09h
@@ -543,6 +516,8 @@ start:
     mov cx, 1
     int 10h
 
+    mov word [p_number], 2
+    draw_selection 0, 2, 0x0d
     call game_loop
 
     jmp halt
