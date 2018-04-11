@@ -15,9 +15,9 @@ LOTT equ 2 ; 000|00-010
 FOHG equ 3 ; 000|00-011
 BICC equ 4 ; 000|00-100
 ; cores
-RED  equ 0  ; 000|00-000
-GRN  equ 8  ; 000|01-000
-BLU  equ 16 ; 000|10-000
+RED  equ 0x0c ; 000|00-000
+GRN  equ 0x02 ; 000|01-000
+BLU  equ 0x09 ; 000|10-000
 
 MASK_GLYPH equ 0b00000111 ; AND mask para encontrar o tipo da carta
 
@@ -71,16 +71,16 @@ calc_grid:
         add ax, 190
         jmp .end
     .bot:
-        mov bx, 355
+        mov bx, 356
         imul ax, 92
         add ax, 360
         jmp .end
-
+    
     .end:
         mov word [gridx], ax
         mov word [gridy], bx
         ret
-
+        
 
 ; (x, y, width, length, color)
 ; desenha um retângulo em («x», «y»)
@@ -113,13 +113,14 @@ select_start dw 0
 select_end dw 0
 
 ; (gridx, griy, color)
-%macro draw_selection 3
+; de cor pré-definida pela variavel «byte color_var»
+%macro draw_selection 2
     get_grid %1, %2
-    sub ax, 3
-    sub bx, 3
+    sub ax, 6
+    sub bx, 6
     mov word [select_start], ax
     mov word [select_end], bx
-    rect_oco word [select_start], word [select_end], CARD_SIZE_X + 6, CARD_SIZE_Y + 6, %3, 3
+    rect_oco word [select_start], word [select_end], CARD_SIZE_X + 12, CARD_SIZE_Y + 12, %3, 3
     pop bx
     pop ax
 %endmacro
@@ -131,15 +132,15 @@ select_end dw 0
 ; e grossura «thickness»
 %macro rect_oco 6
     ;horizontais
-    rect %1, %2, %3, %6, %5 ; cima -> x, y, width, thickness, color
+    rect_color_var %1, %2, %3, %6 ; cima -> x, y, width, thickness, color
     add word [y_init], %4
     sub word [y_init], %6
-    rect %1, word [y_init], %3, %6, %5 ; baixo -> x, length, width, thickness, color
+    rect_color_var %1, word [y_init], %3, %6 ; baixo -> x, length, width, thickness, color
     ;verticais
-    rect %1, %2, %6, %4, %5 ; x, y, thickness, length, color
+    rect_color_var %1, %2, %6, %4 ; x, y, thickness, length, color
     add word [x_init], %3
     sub word [x_init], %6
-    rect word [x_init], %2, %6, %4, %5 ; width, y, thickness, length, color
+    rect_color_var word [x_init], %2, %6, %4 ; width, y, thickness, length, color
 %endmacro
 
 x_init_sp dw 0
@@ -185,12 +186,11 @@ y_init_sp dw 0
     add_x 16
     add_y 28
     rect_color_var word [x_init], word [y_init], 9, 50
-    add_y 41
+    add_y 41    
     rect_color_var word [x_init], word [y_init], 40, 9
     sub_y 20
     add_x 15
     rect_color_var word [x_init], word [y_init], 9, 25
-
 %endmacro
 
 ; (x, y, color)
@@ -198,13 +198,11 @@ y_init_sp dw 0
 %macro draw_fohg 3
     draw_card %1, %2
 
-    add_x 11 ; x = 11
+    add_x 29 ; x = 11
     add_y 51 ; y = 51
-    rect_color_var word [x_init], word [y_init], 50, 9
-    add_x 5  ; x = 16
-    add_y 16 ; y = 67
-    rect_color_var word [x_init], word [y_init], 40, 9
-    sub_y 32 ; y = 35
+    rect_color_var word [x_init], word [y_init], 30, 9
+    sub_x 15  ; x = 16
+    sub_y 16 ; y = 35
     rect_color_var word [x_init], word [y_init], 9, 35
     sub_y 5 ; y = 30
     add_x 15 ; x = 15
@@ -238,11 +236,8 @@ y_init_sp dw 0
     rect_color_var word [x_init], word [y_init], 40, 9
     sub_y 20 ; y = 28
     rect_color_var word [x_init], word [y_init], 9, 50
-    add_x 16 ; x = 32
-    add_y 20 ; y = 48
-    rect_color_var word [x_init], word [y_init], 9, 30
-    add_x 4 ; x = 36
-    add_y 21 ; y = 69
+    add_x 20 ; x = 32
+    add_y 41 ; y = 48
     rect_color_var word [x_init], word [y_init], 20, 9
 %endmacro
 
@@ -252,20 +247,17 @@ y_init_sp dw 0
     draw_card %1, %2
 
     add_x 16 ; x = 16
-    add_y 62 ; y = 62
+    add_y 72 ; y = 62
     rect_color_var word [x_init], word [y_init], 40, 9
-    add_x 5 ; x = 21
-    sub_y 28 ; y = 34
-    rect_color_var word [x_init], word [y_init], 30, 9
-    add_x 10 ; x = 31
-    sub_y 14 ; y = 20
-    rect_color_var word [x_init], word [y_init], 9, 60
+    add_x 15 ; x = 31
+    sub_y 42 ; y = 20
+    rect_color_var word [x_init], word [y_init], 9, 45
     add_x 16 ; x = 47
     add_y 30 ; y = 50
     rect_color_var word [x_init], word [y_init], 9, 15
 %endmacro
 
-draw_linha:
+draw_linha:    
     ; desenhar
     int 10h
 
@@ -282,7 +274,7 @@ draw_linha:
     .continue:
     ; size representa o numero total
     ; de pixels a ser printado
-    dec word [size]
+    dec word [size]	
     cmp word [size], 0
     jg draw_linha
     ret
@@ -345,18 +337,15 @@ random_color:
     cmp dl, 1
     je .green
     jmp .blue
-
+    
     .red:
         mov byte [color_var], 0x0c
-        mov byte [color_value], RED
         ret
     .green:
         mov byte [color_var], 0x02
-        mov byte [color_value], GRN
         ret
     .blue:
         mov byte [color_var], 0x09
-        mov byte [color_value], BLU
         ret
 
 refresh_video:
@@ -367,24 +356,14 @@ refresh_video:
     ret
 
 clear_selection:
-    draw_selection word [p_selection], word [p_number], 0x00
+    push word [color_var]
+    mov word [color_var], 0x00
+    draw_selection word [p_selection], word [p_number]
+    pop word [color_var]
     ret
-;===========================================================================
-flag db 0
-%macro debug 1
-      mov ah, 09h
-      mov al,%1
-      add al,''
-      mov bh,0
-      mov bl,0x0c
-      int 10h
-%endmacro
+
 game_loop:
-    ;cmp byte[flag],1
-    ;jne .read
-    ;mov word [p_number], 0
-    ;mov word[p_selection] , 0
-    ;draw_selection 0, 0, 0x0d ;desenha o celetor na posição 0 e na linha
+
     .read:
         ; [int 16h 00h] - ler teclado
         mov ah, 00h
@@ -393,8 +372,8 @@ game_loop:
         je .left
         cmp ah, 4dh ; seta direita
         je .right
-        cmp al, 0dh
-        je .select
+        cmp al, 0dh ; enter
+        je .select_card
         jmp game_loop
 
         .left:
@@ -403,7 +382,7 @@ game_loop:
             cmp word [p_selection], 0
             jge .draw
             mov word [p_selection], 2
-            jmp .draw
+            jmp .draw          
 
         .right:
             call clear_selection
@@ -413,15 +392,26 @@ game_loop:
             mov word [p_selection], 0
             jmp .draw
 
-        .select: ; aqui eu escolho seto o celetor para a linha 0 onde fica a cartas do player 1
+        .select_card:
             call clear_selection
-            draw_bicc 2, 1, 0
+            draw_bicc word [p_number], 1, 0
             erase_card word [p_selection], word [p_number]
-            mov word[p_number],0
-            mov word[p_selection],1
-        .draw:;posicao da carta coluna, na linha tal que é dada por p_number
-            draw_selection word [p_selection], word [p_number], 0x0d
-jmp game_loop
+            cmp word [p_number], 2
+            je .p_one
+            jmp .p_two
+            .p_one:
+                mov word [p_number], 0
+                mov word [color_var], RED
+                jmp .draw
+            .p_two:
+                mov word [p_number], 2
+                mov word [color_var], BLU
+                jmp .draw
+        
+        .draw: ; posicao da carta coluna, na linha tal que é dada por p_number
+            draw_selection word [p_selection], word [p_number]
+
+        jmp game_loop
 
 ; carta selecionada pelo player
 p_selection dw 0
@@ -470,7 +460,7 @@ play_cards:
 
         cmp dl, 2
         je .lott
-
+        
         cmp dl, 3
         je .fohg
 
@@ -483,19 +473,19 @@ play_cards:
             jmp .next
         .glib:
             save_card GLIB
-            draw_glib word [current_x], word [current_y], 0
+            draw_glib word [current_x], word [current_y], 0 
             jmp .next
         .lott:
             save_card LOTT
-            draw_lott word [current_x], word [current_y], 0
+            draw_lott word [current_x], word [current_y], 0 
             jmp .next
         .fohg:
             save_card FOHG
-            draw_fohg word [current_x], word [current_y], 0
+            draw_fohg word [current_x], word [current_y], 0 
             jmp .next
         .bicc:
             save_card BICC
-            draw_bicc word [current_x], word [current_y], 0
+            draw_bicc word [current_x], word [current_y], 0 
             jmp .next
 
         .next:
@@ -521,7 +511,7 @@ start:
 
     ; [int 10h 00h] - modo de video
     mov al, 12h ; [modo de video VGA 640x480 16 color graphics]
-    mov ah, 00h
+    mov ah, 00h 
     int 10h
 
     ; [int 10h 0bh] - atributos de video
@@ -530,9 +520,9 @@ start:
     mov ah, 0bh
 	int 10h
 
-    lay_cards 0, 0, 3, 0x0c
-    lay_cards 1, 1, 1, 0x09
-    lay_cards 0, 2, 3, 0x02
+    lay_cards 0, 0, 3, RED
+    lay_cards 0, 2, 3, BLU
+    lay_cards 1, 1, 1, GRN
 
     ; printar o numero da ultima carta
     mov ah, 09h
@@ -544,9 +534,11 @@ start:
     mov cx, 1
     int 10h
 
-    mov word [p_number], 2
-    draw_selection 0, 2, 0x0d ;desenha o celetor na posição 0 e na linha 2
+    mov word [p_number], 2 ; o jogador a ir primeiro
+    mov word [color_var], BLU ; a cor do seletor é dada pela variavel «color_var»
+    draw_selection 0, 2 ; seletor na linha 2, posição 0
     call game_loop
+
     jmp halt
 
 halt:

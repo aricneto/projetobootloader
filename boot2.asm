@@ -10,47 +10,43 @@ str4 db 'Executando Kernel', 10, 13, 0
 delay: 
 ;delay baseado em ax    
     push dx
-   mov bp, dx
-	back:
-	dec bp
-	nop
-	jnz back
-	dec dx
-	cmp dx,0    
-	jnz back
+    mov bp, dx
+    back:
+    dec bp
+    nop
+    jnz back
+    dec dx
+    cmp dx,0    
+    jnz back
 
     pop dx
 ret
 
 printString: 
 ;; Printa a string que esta em si    
-	
-	lodsb ;carrega em al oq está em SI e incrementa SI
-	cmp al, 0
-	je exit
+    
+    lodsb ;carrega em al oq está em SI e incrementa SI
+    cmp al, 0
+    je exit
 
-	mov ah, 0xe
-	int 10h	
-	
-	jmp printString
+    mov ah, 0xe
+    int 10h	
+    
+    jmp printString
 exit:
 ret
 
-
-
-
-
 printaPixels:
-	add cx,10
-	add dx,400
-	mov ah, 0ch
-	mov bh, 0
-	mov al,bl
+    add cx,10
+    add dx,400
+    mov ah, 0ch
+    mov bh, 0
+    mov al,bl
 
-	int 10h
-	sub cx,10
-	sub dx,400
-	ret
+    int 10h
+    sub cx,10
+    sub dx,400
+    ret
 
 
 quadrado:
@@ -117,13 +113,11 @@ jmp while2
 
 start:
 
-    mov bl, 10 ; Seta cor dos caracteres para verde
-    ;modificada por luiz
-
+    mov bl, 10 ; Seta cor dos caracteres para amarelo
 
     mov ah, 00h
-	mov al, 12h
-	int 10h
+    mov al, 12h
+    int 10h
     mov bl,1110b;seta cor
 
     mov cx,20
@@ -131,16 +125,10 @@ start:
     call quadrado
     
     mov si, str2
-	call printString
+    call printString
 
     mov dx, 9000
-	call delay
-    
-  
-
-    ;;
-
-
+    call delay
 
     xor ax, ax
     mov ds, ax
