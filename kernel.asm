@@ -7,6 +7,21 @@ HORIZONTAL equ 1
 CARD_SIZE_X equ 72
 CARD_SIZE_Y equ 102
 
+; cada carta ocupa 5 bits
+; cartas
+TRAC equ 0 ; 000|00-000
+GLIB equ 1 ; 000|00-001
+LOTT equ 2 ; 000|00-010
+FOHG equ 3 ; 000|00-011
+BICC equ 4 ; 000|00-100
+; cores
+RED  equ 0  ; 000|00-000
+GRN  equ 8  ; 000|01-000
+BLU  equ 16 ; 000|10-000
+
+MASK_GLYPH equ 0b00000111 ; AND mask para encontrar o tipo da carta
+MASK_COLOR equ 0b00011000 ; AND mask para encontrar a cor da carta
+
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
 ; de tamanho «tamanho»
@@ -53,13 +68,13 @@ calc_grid:
         jmp .end
     .mid:
         mov bx, 190
-        imul ax, -92
-        add ax, 375
+        imul ax, 92
+        add ax, 190
         jmp .end
     .bot:
         mov bx, 355
-        imul ax, -92
-        add ax, 545
+        imul ax, 92
+        add ax, 360
         jmp .end
     
     .end:
@@ -126,6 +141,9 @@ select_end dw 0
     sub word [x_init], %6
     rect word [x_init], %2, %6, %4, %5 ; width, y, thickness, length, color
 %endmacro
+
+x_init_sp dw 0
+y_init_sp dw 0
 
 ; (x, y)
 %macro draw_card 2
@@ -286,6 +304,9 @@ y_init dw 0
 
 color db 0
 color_var db 0
+
+color_value db 0 ; usado para salvar a carta escolhida
+
 size 	  dw 0
 direction db 0
 
@@ -319,12 +340,15 @@ random_color:
     
     .red:
         mov byte [color_var], 0x0c
+        mov byte [color_value], RED
         ret
     .green:
         mov byte [color_var], 0x02
+        mov byte [color_value], GRN
         ret
     .blue:
         mov byte [color_var], 0x09
+        mov byte [color_value], BLU
         ret
 
 refresh_video:
@@ -376,6 +400,9 @@ p_selection dw 0
 ; numero do jogador atual (0 ou 2)
 p_number dw 0
 
+cards_player dd 0
+cards_dealt db 0
+
 current_x dw 0
 current_y dw 0
 max_cards dw 0
@@ -391,10 +418,49 @@ max_cards dw 0
     call play_cards
 %endmacro
 
+%macro save_card 1
+    or dword [cards_player], %1
+    call record_card
+%endmacro
+
+record_card:
+    inc byte [cards_dealt]
+    cmp byte [cards_dealt], 5
+    jle .shift
+    jmp .end
+    .shift:
+        shl dword [cards_player], 5
+    .end:
+        ret
+
 play_cards:
     .play:
         call random_color
         random 5
+
+        mov dh, byte [color_value]
+
+        cmp dh, RED
+        je .red
+        
+        cmp dh, GRN
+        je .grn
+
+        cmp dh, BLU
+        je .blu
+
+        .red:
+            or dword [cards_player], RED
+            jmp .continue
+        .grn:
+            or dword [cards_player], GRN
+            jmp .continue
+        .blu:
+            or dword [cards_player], BLU
+            jmp .continue
+
+        .continue:
+
         cmp dl, 0
         je .trac
 
@@ -411,30 +477,40 @@ play_cards:
         je .bicc
 
         .trac:
+            save_card TRAC
             draw_trac word [current_x], word [current_y], 0 
             jmp .next
         .glib:
+            save_card GLIB
             draw_glib word [current_x], word [current_y], 0 
             jmp .next
         .lott:
+            save_card LOTT
             draw_lott word [current_x], word [current_y], 0 
             jmp .next
         .fohg:
+            save_card FOHG
             draw_fohg word [current_x], word [current_y], 0 
             jmp .next
         .bicc:
+            save_card BICC
             draw_bicc word [current_x], word [current_y], 0 
             jmp .next
 
         .next:
-            mov cx, word [max_cards]
+            mov dx, word [max_cards]
             inc word [current_x]
-            cmp word [current_x], cx ; 3 cartas para cada jogador
+            cmp word [current_x], dx ; 3 cartas para cada jogador
             jl .play
             jmp .finish
 
         .finish:
+            ; nao usamos os ultimos 2 bits, entao mover a info pra eles
+            ;shr dword [cards_player], 2
             ret
+
+
+current_card db 0
 
 start:
     ; setup
@@ -447,31 +523,29 @@ start:
     mov ah, 00h 
     int 10h
 
-    mov ah, 0xb
+    ; [int 10h 0bh] - atributos de video
 	mov bh, 0
 	mov bl, 08h
+    mov ah, 0bh
 	int 10h
 
     lay_cards 0, 0, 3
-    lay_cards 1, 1, 1
+    ;lay_cards 1, 1, 1
     lay_cards 0, 2, 3
-    ;draw_trac 0, 0, 0x0c
-    ;draw_glib 1, 0, 0x0c
-    ;draw_fohg 2, 0, 0x0c
-    ;
-    ;draw_trac 0, 1, 0x0c
-    ;draw_lott 1, 1, 0x0c
-    ;draw_trac 2, 1, 0x0c
-;
-    ;draw_glib 0, 2, 0x0c
-    ;draw_fohg 1, 2, 0x0c
-    ;draw_fohg 2, 2, 0x0c
+
+    ; printar o numero da ultima carta
+    mov ah, 09h
+    mov al, byte [cards_player]
+    and al, MASK_GLYPH
+    add al, '0'
+    mov bh, 0
+    mov bl, 0x0c
+    mov cx, 1
+    int 10h
 
     call game_loop
 
     jmp halt
-
-cards_player_1 db 0b00110011, 0b00110011, 0b00110011
 
 halt:
     jmp $
