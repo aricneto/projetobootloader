@@ -89,18 +89,21 @@ call printString
 mov dx,2000 
 call delay
 jmp while2
+
 printaStr2:
 mov si, str2
 call printString
 mov dx,2000    
 call delay
 jmp while2
+
 printaStr3:
 mov si, str3
 call printString
 mov dx,2000    
 call delay
 jmp while2
+
 printaStr4:
 mov si, str4
 call printString
@@ -123,9 +126,6 @@ start:
     mov cx,20
     mov dx,30
     call quadrado
-    
-    mov si, str2
-    call printString
 
     mov dx, 9000
     call delay
