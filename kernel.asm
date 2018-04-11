@@ -15,11 +15,11 @@ LOTT equ 2 ; 000|00-010
 FOHG equ 3 ; 000|00-011
 BICC equ 4 ; 000|00-100
 ; cores
-RED  equ 0x0c ; 000|00-000
-GRN  equ 0x02 ; 000|01-000
-BLU  equ 0x09 ; 000|10-000
+RED  equ 0x0c
+GRN  equ 0x02
+BLU  equ 0x09
 
-MASK_GLYPH equ 0b00000111 ; AND mask para encontrar o tipo da carta
+MASK_GLYPH equ 0b111 ; AND mask para encontrar o tipo da carta
 
 ; (x, y, tamanho, direcao, cor)
 ; printa uma linha a partir da posicao («x», «y»)
@@ -488,12 +488,11 @@ play_cards:
         .next:
             mov dx, word [max_cards]
             inc word [current_x]
-            cmp word [current_x], dx ; 3 cartas para cada jogador
+            cmp word [current_x], dx ; dx cartas para cada jogador
             jl .play
             jmp .finish
 
         .finish:
-            shr dword [cards_player], 3 ; ultimos 3 bits nao sao usados
             ret
 
 
@@ -521,10 +520,12 @@ start:
     lay_cards 0, 2, 3, BLU
     lay_cards 1, 1, 1, GRN
 
-    ; printar o numero da ultima carta
+    shr dword [cards_player], 3 ; ultimos 3 bits nao sao usados
+
+    ; printar o numero da carta do centro
     mov ah, 09h
-    mov al, byte [cards_player]
-    and al, MASK_GLYPH
+    mov al, byte [cards_player] ; typecast do cards para byte (primeiros 8 bits)
+    and al, MASK_GLYPH ; AND com 0b111 para zerar os outros bits
     add al, '0'
     mov bh, 0
     mov bl, 0x0c
