@@ -75,12 +75,12 @@ calc_grid:
         imul ax, 92
         add ax, 360
         jmp .end
-    
+
     .end:
         mov word [gridx], ax
         mov word [gridy], bx
         ret
-        
+
 
 ; (x, y, width, length, color)
 ; desenha um retângulo em («x», «y»)
@@ -185,12 +185,12 @@ y_init_sp dw 0
     add_x 16
     add_y 28
     rect_color_var word [x_init], word [y_init], 9, 50
-    add_y 41    
+    add_y 41
     rect_color_var word [x_init], word [y_init], 40, 9
     sub_y 20
     add_x 15
     rect_color_var word [x_init], word [y_init], 9, 25
-    
+
 %endmacro
 
 ; (x, y, color)
@@ -265,7 +265,7 @@ y_init_sp dw 0
     rect_color_var word [x_init], word [y_init], 9, 15
 %endmacro
 
-draw_linha:    
+draw_linha:
     ; desenhar
     int 10h
 
@@ -282,7 +282,7 @@ draw_linha:
     .continue:
     ; size representa o numero total
     ; de pixels a ser printado
-    dec word [size]	
+    dec word [size]
     cmp word [size], 0
     jg draw_linha
     ret
@@ -345,7 +345,7 @@ random_color:
     cmp dl, 1
     je .green
     jmp .blue
-    
+
     .red:
         mov byte [color_var], 0x0c
         mov byte [color_value], RED
@@ -369,9 +369,22 @@ refresh_video:
 clear_selection:
     draw_selection word [p_selection], word [p_number], 0x00
     ret
-
+;===========================================================================
+flag db 0
+%macro debug 1
+      mov ah, 09h
+      mov al,%1
+      add al,''
+      mov bh,0
+      mov bl,0x0c
+      int 10h
+%endmacro
 game_loop:
-
+    ;cmp byte[flag],1
+    ;jne .read
+    ;mov word [p_number], 0
+    ;mov word[p_selection] , 0
+    ;draw_selection 0, 0, 0x0d ;desenha o celetor na posição 0 e na linha
     .read:
         ; [int 16h 00h] - ler teclado
         mov ah, 00h
@@ -390,7 +403,7 @@ game_loop:
             cmp word [p_selection], 0
             jge .draw
             mov word [p_selection], 2
-            jmp .draw          
+            jmp .draw
 
         .right:
             call clear_selection
@@ -400,16 +413,15 @@ game_loop:
             mov word [p_selection], 0
             jmp .draw
 
-        .select:
+        .select: ; aqui eu escolho seto o celetor para a linha 0 onde fica a cartas do player 1
             call clear_selection
             draw_bicc 2, 1, 0
             erase_card word [p_selection], word [p_number]
-            jmp game_loop
-        
-        .draw:
+            mov word[p_number],0
+            mov word[p_selection],1
+        .draw:;posicao da carta coluna, na linha tal que é dada por p_number
             draw_selection word [p_selection], word [p_number], 0x0d
-
-        jmp game_loop
+jmp game_loop
 
 ; carta selecionada pelo player
 p_selection dw 0
@@ -458,7 +470,7 @@ play_cards:
 
         cmp dl, 2
         je .lott
-        
+
         cmp dl, 3
         je .fohg
 
@@ -471,19 +483,19 @@ play_cards:
             jmp .next
         .glib:
             save_card GLIB
-            draw_glib word [current_x], word [current_y], 0 
+            draw_glib word [current_x], word [current_y], 0
             jmp .next
         .lott:
             save_card LOTT
-            draw_lott word [current_x], word [current_y], 0 
+            draw_lott word [current_x], word [current_y], 0
             jmp .next
         .fohg:
             save_card FOHG
-            draw_fohg word [current_x], word [current_y], 0 
+            draw_fohg word [current_x], word [current_y], 0
             jmp .next
         .bicc:
             save_card BICC
-            draw_bicc word [current_x], word [current_y], 0 
+            draw_bicc word [current_x], word [current_y], 0
             jmp .next
 
         .next:
@@ -509,7 +521,7 @@ start:
 
     ; [int 10h 00h] - modo de video
     mov al, 12h ; [modo de video VGA 640x480 16 color graphics]
-    mov ah, 00h 
+    mov ah, 00h
     int 10h
 
     ; [int 10h 0bh] - atributos de video
@@ -533,9 +545,8 @@ start:
     int 10h
 
     mov word [p_number], 2
-    draw_selection 0, 2, 0x0d
+    draw_selection 0, 2, 0x0d ;desenha o celetor na posição 0 e na linha 2
     call game_loop
-
     jmp halt
 
 halt:
