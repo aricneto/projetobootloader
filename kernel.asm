@@ -391,16 +391,32 @@ game_loop:
 
         .select_card:
             call clear_selection
-            draw_bicc word [p_number], 1, 0
+
             erase_card word [p_selection], word [p_number]
+            
+            mov eax, dword [cards_player]
+            mov dword [cards_player_temp], eax
+
+            shr dword [cards_player_temp], 3 ; tirar os bits da carta do centro
+            
             cmp word [p_number], 2
-            je .p_one
-            jmp .p_two
-            .p_one:
+            je .goto_p_one
+            jmp .goto_p_two
+            .goto_p_one:
+                ; player 2 tem os 9 primeiros bits (menos significantes)
+                ; então não precisamos de shift
+
+                call move_card
+
                 mov word [p_number], 0
                 mov word [color_var], RED
                 jmp .draw
-            .p_two:
+            .goto_p_two:
+                ; player 1 tem os 9 proximos bits depois de player 2
+
+                shr dword [cards_player_temp], 9
+                call move_card
+
                 mov word [p_number], 2
                 mov word [color_var], BLU
                 jmp .draw
@@ -410,13 +426,38 @@ game_loop:
 
         jmp game_loop
 
+; Move a carta selecionada para o centro
+move_card:
+    ; (2 - x) = quantas vezes teremos que dar 3-bit shift
+    ; 3 * (2 - x) = 6 - 3x
+
+    mov cl, 6
+    imul ax, word [p_selection], 3
+    sub cl, al
+    shr dword [cards_player_temp], cl
+    and dword [cards_player_temp], MASK_GLYPH
+
+    mov dl, byte [cards_player_temp]
+
+    push ax
+    mov ax, word [p_number]
+    mov word [current_x], ax
+    pop ax
+
+    call play_cards
+    ret
+
 ; carta selecionada pelo player
 p_selection dw 0
 ; numero do jogador atual (0 ou 2)
 p_number dw 0
 
 cards_player dd 0
+cards_player_temp dd 0
+
 cards_dealt db 0
+selected_card db 0
+
 
 current_x dw 0
 current_y dw 0
@@ -446,8 +487,14 @@ record_card:
     ret
 
 play_cards:
-    .play:
+    cmp byte [is_dealing], 1
+    je .random
+    jmp .play
+
+    .random:
         random 5
+
+    .play:
 
         cmp dl, 0
         je .trac
@@ -465,31 +512,51 @@ play_cards:
         je .bicc
 
         .trac:
-            save_card TRAC
             draw_trac word [current_x], word [current_y], 0
-            jmp .next
+            cmp byte [is_dealing], 1
+            je .tcnt
+            jmp .finish
+            .tcnt:
+                save_card TRAC
+                jmp .next
         .glib:
-            save_card GLIB
-            draw_glib word [current_x], word [current_y], 0 
-            jmp .next
+            draw_glib word [current_x], word [current_y], 0
+            cmp byte [is_dealing], 1
+            je .gcnt
+            jmp .finish
+            .gcnt:
+                save_card GLIB
+                jmp .next
         .lott:
-            save_card LOTT
             draw_lott word [current_x], word [current_y], 0 
-            jmp .next
+            cmp byte [is_dealing], 1
+            je .lcnt
+            jmp .finish
+            .lcnt:
+                save_card LOTT
+                jmp .next
         .fohg:
-            save_card FOHG
             draw_fohg word [current_x], word [current_y], 0 
-            jmp .next
+            cmp byte [is_dealing], 1
+            je .fcnt
+            jmp .finish
+            .fcnt:
+                save_card FOHG
+                jmp .next
         .bicc:
-            save_card BICC
             draw_bicc word [current_x], word [current_y], 0 
-            jmp .next
+            cmp byte [is_dealing], 1
+            je .bcnt
+            jmp .finish
+            .bcnt:
+                save_card BICC
+                jmp .next
 
         .next:
             mov dx, word [max_cards]
             inc word [current_x]
             cmp word [current_x], dx ; dx cartas para cada jogador
-            jl .play
+            jl .random
             jmp .finish
 
         .finish:
@@ -497,6 +564,10 @@ play_cards:
 
 
 current_card db 0
+
+; variavel que determina se o programa está
+; distribuindo as cartas ou apenas as desenhando
+is_dealing db 0
 
 start:
     ; setup
@@ -512,13 +583,15 @@ start:
 
     ; [int 10h 0bh] - atributos de video
 	mov bh, 0
-	mov bl, 08h ; cor da tela
+	mov bl, 08h ; cor da tela 
     mov ah, 0bh
 	int 10h
 
+    mov byte [is_dealing], 1
     lay_cards 0, 0, 3, RED
     lay_cards 0, 2, 3, BLU
     lay_cards 1, 1, 1, GRN
+    mov byte [is_dealing], 0
 
     shr dword [cards_player], 3 ; ultimos 3 bits nao sao usados
 
