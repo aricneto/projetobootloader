@@ -646,7 +646,26 @@ end_game:
     mov byte [carta_atacada], dl
     call compare_glyph
 
-    jmp halt
+    mov al, byte [pontos_p1]
+
+    cmp al, byte [pontos_p2]
+    jl  .p2_wins
+    jg  .p1_wins
+    jmp .draw
+    
+    .p2_wins:
+        rect 0, 336, 15, 144, BLU
+        jmp .finish
+    .p1_wins:
+        rect 625, 0, 15, 144, RED
+        jmp .finish
+    .draw:
+        rect 625, 0, 15, 144, 0x0b
+        rect 0, 336, 15, 144, 0x0b
+        jmp .finish
+
+    .finish:
+        jmp halt
 
 ; (current x, current y, num_cartas, cor)
 ; colocar cartas aleatorias na mesa
@@ -732,6 +751,13 @@ start:
 	mov bl, 08h ; cor da tela 
     mov ah, 0bh
 	int 10h
+
+    ; tabuleiro
+    rect 0, 144, 640, 6, RED
+    rect 0, 330, 640, 6, BLU
+
+    rect 0, 150, 640, 180, 0x06
+    ; tabuleiro
 
     mov byte [is_dealing], 1
     lay_cards 0, 0, 3, RED
