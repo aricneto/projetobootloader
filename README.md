@@ -4,7 +4,7 @@ Um jogo só que em Assembly.
 # Como jogar
 
 ## Básico
-- Existem cinco simbolos: `trac`, `grib`, `lott`, `fohg` e `bicc`
+- Existem cinco simbolos: `trac`, `glib`, `lott`, `fohg` e `bicc`
 - E três cores: `azul`, `vermelho` e `verde`
 - No começo do jogo, o sistema escolhe uma carta para aperecer no centro
 	- O jogador 1 deve escolher uma carta para atacar a do centro
@@ -16,25 +16,17 @@ Um jogo só que em Assembly.
 
 ## Pontuação
 A pontuação é dada como um jogo de pedra-papel-tesoura, com algumas peculiaridades. Uma vitória equivale a `+2 pontos`, uma derrota a `-1 ponto`:
-- `trac` ganha de `bicc` e `grib`, mas perde para `lott` e `fohg`
-- `grib` ganha de `lott` e `bicc`, mas perde para `trac` e `fohg`
-- `lott` ganha de `trac` e `fohg`, mas perde para `bicc` e `grib`
-- `bicc` ganha de `fohg` e `lott`, mas perde para `grib` e `trac`
-- `fohg` ganha de `grib` e `trac`, mas perde para `lott` e `bicc`
-
-Além disso, a cor da carta influencia na pontuação:
-- Cartas que atacarem uma carta de mesma cor perdem `1 ponto`
-- Cartas que atacarem um rival ganham `1 ponto`. Rivais:
-	- `azul` é rival de `vermelho`
-	- `vermelho` é rival de `verde`
-	- `verde` é rival de `azul`
-- Cartas que atacarem outras cores se não as suas ou as rivais não perdem ou ganham pontos.
+- `trac` ganha de `bicc` e `glib`, mas perde para `lott` e `fohg`
+- `glib` ganha de `lott` e `bicc`, mas perde para `trac` e `fohg`
+- `lott` ganha de `trac` e `fohg`, mas perde para `bicc` e `glib`
+- `bicc` ganha de `fohg` e `lott`, mas perde para `glib` e `trac`
+- `fohg` ganha de `glib` e `trac`, mas perde para `lott` e `bicc`
 
 # Sobre
 - `boot1.asm` inicia em `0x7c00` e carrega o setor de memória de boot2
 - `boot2.asm` inicia em `0x500` e carrega o setor de memória do kernel mas antes disso apresenta algumas mensagens para alertar o usuario do que está acontecendo
 - `kernel.asm` inicia em `0x7e00` e é onde o programa principal está armazenado
-- Para compilar, veja o makefile
+- Para compilar, `make all`
 
 # Style
 - Identação: `4 espaços`

@@ -24,23 +24,48 @@ BLU  equ 0x09
 
 MASK_GLYPH equ 0b111 ; AND mask para encontrar o tipo da carta
 
-; (x, y, tamanho, direcao, cor)
-; printa uma linha a partir da posicao («x», «y»)
-; de tamanho «tamanho»
-; na direcao «direcao»
-; de cor «cor»
-%macro print_linha 5
-    ; [int 10h 0ch] - printar pixel
-    mov al, %5     ; [cor]    - verde
-    mov bh, 0      ; [pagina] - 0
-    mov cx, %1     ; [coluna] - MP -> posiçao x da linha
-    mov dx, %2     ; [linha]  - MP -> posicao y da linha
-    mov word [size], %3 	 ; tamanho da linha
-    mov byte [direction], %4 ; direcao da linha (VERTICAL ou HORIZONTAL)
-    mov ah, 0ch
+draw_linha:    
+    ; desenhar
     int 10h
-    call draw_linha
-%endmacro
+    inc dx
+
+    ; size representa o numero total
+    ; de pixels a ser printado
+    dec word [size]	
+    cmp word [size], 0
+    jg draw_linha
+    ret
+
+draw_barras:
+    mov word [x_coord], cx
+    mov word [y_coord], dx
+    mov word [width], ax
+    mov word [length], si
+
+    mov word [x_init], cx
+    mov word [y_init], dx
+
+    mov ah, 0ch
+    mov bh, 0
+    mov al, byte [color]
+
+    .draw:
+        mov si, word [length]
+        mov word [size], si
+        mov cx, word [x_coord]
+        mov dx, word [y_coord]
+        call draw_linha
+
+        inc word [x_coord]
+        dec word [width]
+        cmp word [width], 0
+        jg .draw
+    ret
+
+x_coord dw 0
+y_coord dw 0
+width dw 0
+length dw 0
 
 gridx dw 0
 gridy dw 0
@@ -49,8 +74,6 @@ gridy dw 0
 ; calcula a grade para posicionamento
 ; das cartas, guarda em «ax», «bx»
 %macro get_grid 2
-    push ax
-    push bx
     mov ax, %1
     mov bx, %2
     call calc_grid
@@ -98,7 +121,7 @@ calc_grid:
     call draw_barras
 %endmacro
 
-; (x, y, width, length, color)
+; (x, y, width, length)
 ; desenha um retângulo em («x», «y»)
 ; de tamanho «width», «length»
 ; de cor pré-definida pela variavel «byte color_var»
@@ -119,32 +142,17 @@ select_end dw 0
 ; de cor pré-definida pela variavel «byte color_var»
 %macro draw_selection 2
     get_grid %1, %2
-    sub ax, 6
-    sub bx, 6
-    mov word [select_start], ax
-    mov word [select_end], bx
-    rect_oco word [select_start], word [select_end], CARD_SIZE_X + 12, CARD_SIZE_Y + 12, %3, 3
-    pop bx
-    pop ax
+    call draw_select
 %endmacro
 
-; (x, y, width, length, color, thickness)
-; desenha um retângulo oco em («x», «y»)
-; de tamanho «width», «length»
-; de cor «color»
-; e grossura «thickness»
-%macro rect_oco 6
-    ;horizontais
-    rect_color_var %1, %2, %3, %6 ; cima -> x, y, width, thickness, color
-    add word [y_init], %4
-    sub word [y_init], %6
-    rect_color_var %1, word [y_init], %3, %6 ; baixo -> x, length, width, thickness, color
-    ;verticais
-    rect_color_var %1, %2, %6, %4 ; x, y, thickness, length, color
-    add word [x_init], %3
-    sub word [x_init], %6
-    rect_color_var word [x_init], %2, %6, %4 ; width, y, thickness, length, color
-%endmacro
+draw_select:
+    sub ax, 6
+    add bx, CARD_SIZE_Y
+    add bx, 6
+    mov word [select_start], ax
+    mov word [select_end], bx
+    rect_color_var word [select_start], word [select_end], CARD_SIZE_X + 12, 5
+    ret
 
 x_init_sp dw 0
 y_init_sp dw 0
@@ -153,16 +161,12 @@ y_init_sp dw 0
 %macro draw_card 2
     get_grid %1, %2
     rect ax, bx, CARD_SIZE_X, CARD_SIZE_Y, 0x0f
-    pop bx
-    pop ax
 %endmacro
 
 ; (x, y)
 %macro erase_card 2
     get_grid %1, %2
     rect ax, bx, CARD_SIZE_X, CARD_SIZE_Y, 0x00
-    pop bx
-    pop ax
 %endmacro
 
 %macro add_x 1
@@ -186,14 +190,12 @@ y_init_sp dw 0
 %macro draw_glib 3
     draw_card %1, %2
 
-    add_x 16
+    add_x 30
     add_y 28
-    rect_color_var word [x_init], word [y_init], 9, 50
-    add_y 41    
-    rect_color_var word [x_init], word [y_init], 40, 9
-    sub_y 20
-    add_x 15
-    rect_color_var word [x_init], word [y_init], 9, 25
+    rect_color_var word [x_init], word [y_init], 9, 35
+    add_y 26
+    sub_x 13   
+    rect_color_var word [x_init], word [y_init], 36, 9
 %endmacro
 
 ; (x, y, color)
@@ -222,8 +224,6 @@ y_init_sp dw 0
     rect_color_var word [x_init], word [y_init], 9, 20
     add_y 20 ; y = 48
     rect_color_var word [x_init], word [y_init], 40, 9
-    add_x 14 ; x = 30
-    rect_color_var word [x_init], word [y_init], 9, 30
 %endmacro
 
 ; (x, y, color)
@@ -246,58 +246,14 @@ y_init_sp dw 0
 %macro draw_bicc 3
     draw_card %1, %2
 
-    add_x 16 ; x = 16
-    add_y 72 ; y = 62
-    rect_color_var word [x_init], word [y_init], 40, 9
-    add_x 15 ; x = 31
-    sub_y 42 ; y = 20
+    add_y 30 ; y = 62
+    add_x 31 ; x = 31
     rect_color_var word [x_init], word [y_init], 9, 45
     add_x 16 ; x = 47
     add_y 30 ; y = 50
     rect_color_var word [x_init], word [y_init], 9, 15
 %endmacro
 
-draw_linha:    
-    ; desenhar
-    int 10h
-
-    ; checar direçao a ser desenhada
-    cmp byte [direction], VERTICAL
-    je .vertical
-    jmp .horizontal
-    .vertical:
-        inc dx
-        jmp .continue
-    .horizontal:
-        inc cx
-
-    .continue:
-    ; size representa o numero total
-    ; de pixels a ser printado
-    dec word [size]	
-    cmp word [size], 0
-    jg draw_linha
-    ret
-
-draw_barras:
-    mov word [x_coord], cx
-    mov word [y_coord], dx
-    mov word [width], ax
-    mov word [length], si
-    mov word [x_init], cx
-    mov word [y_init], dx
-    .draw:
-        print_linha word [x_coord], word [y_coord], si, VERTICAL, byte [color]
-        inc word [x_coord]
-        dec word [width]
-        cmp word [width], 0
-        jg .draw
-    ret
-
-x_coord dw 0
-y_coord dw 0
-width dw 0
-length dw 0
 
 x_init dw 0
 y_init dw 0
@@ -488,7 +444,10 @@ move_card:
         jmp .s_p2
         .s_p1:
             mov word [current_x], 4
-            jmp .skip
+            call play_cards
+            shr word [cards_attack], 3
+            jmp end_game
+            ;jmp .skip
         .s_p2:
             mov word [current_x], 0
             jmp .skip
@@ -569,6 +528,126 @@ current_x dw 0
 current_y dw 0
 max_cards dw 0
 
+; usado para saber qual player esta sendo calculado os pontos
+p_to_score db 0
+
+; usados para comparaçao
+carta_atacada db 0
+carta_atacante db 0
+
+; pontuaçao dos players
+pontos_p1 db 0
+pontos_p2 db 0
+
+
+compare_glyph:
+    xor cx, cx
+    mov dh, byte [carta_atacada]
+    mov dl, byte [carta_atacante]
+    
+    cmp dl, 0
+    je .trac
+
+    cmp dl, 1
+    je .glib
+
+    cmp dl, 2
+    je .lott
+    
+    cmp dl, 3
+    je .fohg
+
+    cmp dl, 4
+    je .bicc
+
+    .trac:
+        cmp dh, BICC
+        je .win
+        cmp dh, GLIB
+        je .win
+        jmp .lose
+    .glib:
+        cmp dh, LOTT
+        je .win
+        cmp dh, BICC
+        je .win
+        jmp .lose
+    .lott:
+        cmp dh, TRAC
+        je .win
+        cmp dh, FOHG
+        je .win
+        jmp .lose
+    .fohg:
+        cmp dh, GLIB
+        je .win
+        cmp dh, TRAC
+        je .win
+        jmp .lose
+    .bicc:
+        cmp dh, FOHG
+        je .win
+        cmp dh, LOTT
+        je .win
+        jmp .lose
+
+    .win:
+        add cl, 1
+        jmp .score
+    .lose:
+        sub cl, 2
+        jmp .score
+
+    
+    .score:
+        cmp byte [p_to_score], 0
+        je .p_one
+        jmp .p_two
+        .p_one:
+            add byte [pontos_p1], cl
+            jmp .finish
+        .p_two:
+            add byte [pontos_p2], cl
+            jmp .finish
+    
+    .finish:
+        ret
+
+end_game:
+    ; salvar carta do centro
+    search_card DECK, 1, 2
+    mov byte [carta_atacada], dl
+
+    ; comparar player 2 -> centro
+    mov byte [p_to_score], 2
+    search_card ATTACK, 2, 0
+    mov byte [carta_atacante], dl
+    call compare_glyph
+
+    ; comparar player 1 -> centro
+    mov byte [p_to_score], 0
+    search_card ATTACK, 1, 0
+    mov byte [carta_atacante], dl
+    call compare_glyph
+
+    ; comparar player 2 (carta 2) -> player 1
+    mov byte [p_to_score], 2
+    search_card ATTACK, 1, 1 ;
+    mov byte [carta_atacante], dl
+    search_card ATTACK, 1, 0
+    mov byte [carta_atacada], dl
+    call compare_glyph
+
+    ; comparar player 1 (carta 2) -> player 2
+    mov byte [p_to_score], 0
+    search_card ATTACK, 1, 2
+    mov byte [carta_atacante], dl
+    search_card ATTACK, 2, 0
+    mov byte [carta_atacada], dl
+    call compare_glyph
+
+    jmp halt
+
 ; (current x, current y, num_cartas, cor)
 ; colocar cartas aleatorias na mesa
 ; começando da posicao «x», «y»
@@ -636,20 +715,6 @@ play_cards:
         .finish:
             ret
 
-; ««« DEBUG »»»
-%macro debug_macro 0
-    ; printar o numero da carta do centro
-    mov ah, 09h
-    mov al, byte [cards_player] ; typecast do cards para byte (primeiros 8 bits)
-    and al, MASK_GLYPH ; AND com 0b111 para zerar os outros bits
-    add al, '0'
-    mov bh, 0
-    mov bl, 0x0c
-    mov cx, 1
-    int 10h
-%endmacro
-; ««« DEBUG »»»
-
 start:
     ; setup
     xor ax, ax    ; ax <- 0
@@ -675,10 +740,6 @@ start:
     mov byte [is_dealing], 0
 
     shr dword [cards_player], 3 ; ultimos 3 bits nao sao usados
-
-    ; ««« DEBUG »»»
-    ; debug_macro
-    ; ««« DEBUG »»»
 
     mov word [p_number], 2 ; o jogador a ir primeiro
     mov word [color_var], BLU ; a cor do seletor é dada pela variavel «color_var»
